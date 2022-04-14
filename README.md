@@ -14,7 +14,7 @@ pip install .
 
 ## Uninstall
 ```bash
-pip uninstall pysh
+pip uninstall pyAbletonPush
 ```
 
 ## Add module to python path
