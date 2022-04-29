@@ -1,9 +1,20 @@
 import threading
-import mido  # https://github.com/mido/mido, also run pip3 install python-rtmidi --install-option="--no-jack"
 from time import sleep
 import re
+import mido  # https://github.com/mido/mido, also run pip3 install python-rtmidi --install-option="--no-jack"
+import paho.mqtt.client as mqtt
 from AbletonPush.constants import PUSH_TEXT_CAHRACTER_SET_DICT, PUSH_TEXT_CAHRACTER_SET_ALTERNATIVES_DICT, \
-    SYSEX_PREFIX_PUSH, ButtonGridColors, ButtonGridColorsBrightness
+    SYSEX_PREFIX_PUSH, ButtonGridColors, ButtonGridColorsBrightness, MIDIType, LightTypes, LightColorSingle, \
+    LightColorRedYellow
+from AbletonPush.structure import Button, PushControls
+
+
+def try_parse_int(s, base=10, val=None):
+    """returns 'val' instead of throwing an exception when parsing fails"""
+    try:
+        return int(s, base)
+    except ValueError:
+        return val
 
 
 class AbletonPush(threading.Thread):
@@ -31,6 +42,8 @@ class AbletonPush(threading.Thread):
         # Instantiate variables
         self.midi_user = None
         self.midi_live = None
+        self.mqtt_client = None
+        self.controls = None
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.quit = False
@@ -38,8 +51,15 @@ class AbletonPush(threading.Thread):
     def run(self):
         self.midi_user = mido.open_ioport(self.port_user)
         self.midi_live = mido.open_ioport(self.port_live)
+        self.mqtt_client = mqtt.Client()
+        self.mqtt_client.on_connect = self._mqtt_on_connected
+        self.mqtt_client.on_message = self._mqtt_on_message
+        self.mqtt_client.connect(host="127.0.0.1")
+        self.mqtt_client.loop_start()
+        self.controls = PushControls(ableton_push=self)
         while True:
             if self.quit:
+                self.mqtt_client.loop_stop()
                 return
             msg = self.midi_user.receive(False)
             if msg:
@@ -62,6 +82,132 @@ class AbletonPush(threading.Thread):
                 if self.print_midi:
                     print(f"Live {msg}")
             sleep(0.001)
+
+    def _mqtt_on_connected(self, client, userdata, flags, rc):
+        print(f"MQTT Connected with result code {rc}")
+        client.subscribe("ableton_push/#")
+
+    def _mqtt_on_message(self, client, userdata, msg):
+        # print(f"MQTT {msg.topic} {msg.payload}")
+        topics = msg.topic.split("/")
+        if len(topics) >= 3:
+            # Set topics_in[btn.name]["set_light"] = set_light_callback
+            if topics[1] in self.controls.topics_in:
+                if topics[2] in self.controls.topics_in[topics[1]]:
+                    control_object = self.controls.topics_in[topics[1]][topics[2]][0]
+                    callback = self.controls.topics_in[topics[1]][topics[2]][1]
+                    callback(topics, control_object, msg)
+
+    def __repr__(self):
+        out = f"AbletonPush"
+        out += f"\n\t{self.midi_user}"
+        out += f"\n\t{self.midi_live}"
+        return out
+
+    def button_set_color(self, button: Button, color):
+        """
+        Send color to appropriate MIDI note/control.
+        :param button: button abject from structure-file. Shall have MIDIType, Channel, midi_id and luminance_type.
+        :param color: int color palette,
+                      str "Red,Green,Blue" (ex. "255,127,0") can only be used if button-luminance_type is RGB or
+                      textual representation according to luminance_type (ex. 'RedLit').
+        """
+        color_argument = color
+        color_to_set = None
+        color_to_set_rgb = None
+        if type(color_argument) is int:
+            color_to_set = color
+        elif type(color_argument) is bytes or type(color_argument) is str:
+            # Convert bytes to str
+            if type(color_argument) is bytes:
+                color_argument = color_argument.decode()
+            # Parse color argument
+            if try_parse_int(color_argument) is not None:
+                # It's an integer
+                color_to_set = int(color_argument)
+            elif button.luminance_type.value <= 4:
+                # Single colors, check if it's a named enum
+                if color_argument in LightColorSingle.__members__:
+                    color_to_set = LightColorSingle[color_argument].value
+                else:
+                    raise Exception(f"Can't find color {color_argument} in enum LightColorSingle.")
+            elif button.luminance_type == LightTypes.RedYellow:
+                # Dual colors, check if it's a named enum
+                if color_argument in LightColorRedYellow.__members__:
+                    color_to_set = LightColorRedYellow[color_argument].value
+                else:
+                    raise Exception(f"Can't find color {color_argument} in enum LightColorRedYellow.")
+            elif button.luminance_type == LightTypes.RGB:
+                # RGB colors, check if it's a named enum
+                if color_argument in ButtonGridColorsBrightness.__members__:
+                    color_to_set = ButtonGridColorsBrightness[color_argument].value
+                elif color_argument in ButtonGridColors.__members__:
+                    color_to_set = ButtonGridColors[color_argument].value
+                else:
+                    # Or check if it's 3 integers comma-separated
+                    rgb = color_argument.split(",")
+                    if len(rgb) == 3:
+                        red = try_parse_int(rgb[0])
+                        green = try_parse_int(rgb[1])
+                        blue = try_parse_int(rgb[2])
+                        if red is not None and green is not None and blue is not None:
+                            color_to_set_rgb = (red, green, blue)
+                        else:
+                            raise Exception(f"Couldn't parse RGB from color {color_argument}.")
+                    else:
+                        raise Exception(f"Can't find color {color_argument} in enum ButtonGridColorsBrightness or "
+                                        f"ButtonGridColors.")
+            else:
+                raise Exception(f"Couldn't parse color argument {color_argument}.")
+        else:
+            raise Exception(f"Color argument {color_argument} is not valid for button_set_color().")
+        # print(type(color))
+        # print(f"color_to_set {color_to_set}, color_to_set_rgb {color_to_set_rgb}")
+
+        # Validate ranges
+        if button.luminance_type.value <= 4:
+            # Single colors
+            if color_to_set < 0:
+                raise Exception(f"Color {color_to_set} for Single can't be negative.")
+            if color_to_set >= len(LightColorSingle.__members__):
+                raise Exception(f"Color {color_to_set} can't be more than max of LightColorSingle.")
+        elif button.luminance_type == LightTypes.RedYellow:
+            # Dual colors
+            if color_to_set < 0:
+                raise Exception(f"Color {color_to_set} for Dual can't be negative.")
+            if color_to_set >= len(LightColorRedYellow.__members__):
+                raise Exception(f"Color {color_to_set} can't be more than max of LightColorRedYellow.")
+        elif button.luminance_type == LightTypes.RGB:
+            # RGB colors
+            if color_to_set is not None:
+                if color_to_set < 0:
+                    raise Exception(f"Color {color_to_set} for RGB can't be negative.")
+                if color_to_set >= len(ButtonGridColors.__members__):
+                    raise Exception(f"Color {color_to_set} can't be more than max of ButtonGridColors.")
+            elif color_to_set_rgb is not None:
+                if color_to_set_rgb[0] < 0:
+                    raise Exception(f"Color {color_to_set_rgb} red for RGB can't be negative.")
+                if color_to_set_rgb[0] > 255:
+                    raise Exception(f"Color {color_to_set_rgb} red for RGB can't be more than 255.")
+                if color_to_set_rgb[1] < 0:
+                    raise Exception(f"Color {color_to_set_rgb} green for RGB can't be negative.")
+                if color_to_set_rgb[1] > 255:
+                    raise Exception(f"Color {color_to_set_rgb} green for RGB can't be more than 255.")
+                if color_to_set_rgb[2] < 0:
+                    raise Exception(f"Color {color_to_set_rgb} blue for RGB can't be negative.")
+                if color_to_set_rgb[2] > 255:
+                    raise Exception(f"Color {color_to_set_rgb} blue for RGB can't be more than 255.")
+            else:
+                raise Exception(f"A color must be set {color_argument}.")
+
+        if color_to_set is not None:
+            if button.midi_type == MIDIType.ControlChange:
+                self._send_control_change(channel=button.channel, control=button.midi_id, value=color_to_set)
+            else:
+                self._send_note_on(channel=button.channel, note=button.midi_id, velocity=color_to_set)
+        else:
+            self.button_grid_set_color(pad=button.pad_number,
+                                       red=color_to_set_rgb[0], green=color_to_set_rgb[1], blue=color_to_set_rgb[2])
 
     def _send_control_change(self, channel: int, control: int, value: int):
         """

@@ -8,6 +8,62 @@ from enum import Enum
 SYSEX_PREFIX_PUSH = [71, 127, 21]
 
 
+class MIDIType(Enum):
+    ControlChange = 0
+    Note = 1
+    Pitch = 3
+    Touch = 4
+
+
+class LightTypes(Enum):
+    White = 0
+    Red = 1
+    Green = 2
+    Yellow = 3
+    Blue = 4
+    RedYellow = 5
+    RGB = 6
+    NoLight = 7
+
+
+class LightColorRedYellow(Enum):
+    Black = 0
+    RedDim = 1
+    RedDimBlinkSlow = 2
+    RedDimBlinkFast = 3
+    RedLit = 4
+    RedLitBlinkSlow = 5
+    RedLitBlinkFast = 6
+    YellowDim = 7
+    YellowDimBlinkSlow = 8
+    YellowDimBlinkFast = 9
+    YellowLit = 10
+    YellowLitBlinkSlow = 11
+    YellowLitBlinkFast = 12
+    LimeDim = 13
+    LimeDimBlinkSlow = 14
+    LimeDimBlinkFast = 15
+    LimeLit = 16
+    LimeLitBlinkSlow = 17
+    LimeLitBlinkFast = 18
+    GreenDim = 19
+    GreenDimBlinkSlow = 20
+    GreenDimBlinkFast = 21
+    GreenLit = 22
+    GreenLitBlinkSlow = 23
+    GreenLitBlinkFast = 24
+
+
+class LightColorSingle(Enum):
+    Black = 0
+    Dim = 1
+    DimBlinkSlow = 2
+    DimBlinkFast = 3
+    Lit = 4
+    LitBlinkSlow = 5
+    LitBlinkFast = 6
+
+
 class TouchStripModes(Enum):
     FollowTouchReturnToMiddleLock = 0
     BarAdjustTouchBottomLock = 1
@@ -613,51 +669,3 @@ class ButtonGridColorsBrightness(Enum):
     RedTorch50 = ButtonGridColors.RedTorchRed.value
     RedTorch17 = ButtonGridColors.RedDarkScarlet.value
     RedTorch07 = ButtonGridColors.VioletLicorice.value
-
-
-class LightTypes(Enum):
-    White = 0
-    Red = 1
-    Green = 2
-    Yellow = 3
-    Blue = 4
-    RedYellow = 5
-    RGB = 6
-
-
-class LightColorRedYellow(Enum):
-    Black = 0
-    RedDim = 1
-    RedDimBlinkSlow = 2
-    RedDimBlinkFast = 3
-    RedLit = 4
-    RedLitBlinkSlow = 5
-    RedLitBlinkFast = 6
-    YellowDim = 7
-    YellowDimBlinkSlow = 8
-    YellowDimBlinkFast = 9
-    YellowLit = 10
-    YellowLitBlinkSlow = 11
-    YellowLitBlinkFast = 12
-    LimeDim = 13
-    LimeDimBlinkSlow = 14
-    LimeDimBlinkFast = 15
-    LimeLit = 16
-    LimeLitBlinkSlow = 17
-    LimeLitBlinkFast = 18
-    GreenDim = 19
-    GreenDimBlinkSlow = 20
-    GreenDimBlinkFast = 21
-    GreenLit = 22
-    GreenLitBlinkSlow = 23
-    GreenLitBlinkFast = 24
-
-
-class LightColorSingle(Enum):
-    Black = 0
-    Dim = 1
-    DimBlinkSlow = 2
-    DimBlinkFast = 3
-    Lit = 4
-    LitBlinkSlow = 5
-    LitBlinkFast = 6
