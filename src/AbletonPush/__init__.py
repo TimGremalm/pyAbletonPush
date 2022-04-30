@@ -6,15 +6,8 @@ import paho.mqtt.client as mqtt
 from AbletonPush.constants import PUSH_TEXT_CAHRACTER_SET_DICT, PUSH_TEXT_CAHRACTER_SET_ALTERNATIVES_DICT, \
     SYSEX_PREFIX_PUSH, ButtonGridColors, ButtonGridColorsBrightness, MIDIType, LightTypes, LightColorSingle, \
     LightColorRedYellow
+from AbletonPush.helper_functions import try_parse_int
 from AbletonPush.structure import Button, PushControls
-
-
-def try_parse_int(s, base=10, val=None):
-    """returns 'val' instead of throwing an exception when parsing fails"""
-    try:
-        return int(s, base)
-    except ValueError:
-        return val
 
 
 class AbletonPush(threading.Thread):
@@ -48,6 +41,25 @@ class AbletonPush(threading.Thread):
         self.setDaemon(True)
         self.quit = False
 
+    def midi_parse(self, msg):
+        if msg.type == 'control_change':
+            midi_id = msg.control
+        elif msg.type == 'note_on' or msg.type == 'note_off':
+            midi_id = msg.note
+        elif msg.type == 'polytouch':
+            midi_id = msg.note
+        elif msg.type == 'pitchwheel':
+            midi_id = 'pitchwheel'
+        else:
+            return
+        # Callback if MIDI message in self.controls.topics_out
+        if msg.channel in self.controls.topics_out:
+            if midi_id in self.controls.topics_out[msg.channel]:
+                if msg.type in self.controls.topics_out[msg.channel][midi_id]:
+                    btn = self.controls.topics_out[msg.channel][midi_id][msg.type][0]
+                    callback = self.controls.topics_out[msg.channel][midi_id][msg.type][1]
+                    callback(btn, msg)
+
     def run(self):
         self.midi_user = mido.open_ioport(self.port_user)
         self.midi_live = mido.open_ioport(self.port_live)
@@ -77,6 +89,7 @@ class AbletonPush(threading.Thread):
                         pass
                 if self.print_midi:
                     print(f"User {msg}")
+                self.midi_parse(msg)
             msg = self.midi_live.receive(False)
             if msg:
                 if self.print_midi:
@@ -117,6 +130,11 @@ class AbletonPush(threading.Thread):
         color_to_set_rgb = None
         if type(color_argument) is int:
             color_to_set = color
+        elif str(type(color_argument)) == str(LightColorRedYellow)\
+                or str(type(color_argument)) == str(LightColorSingle) \
+                or str(type(color_argument)) == str(ButtonGridColors) \
+                or str(type(color_argument)) == str(ButtonGridColorsBrightness):
+            color_to_set = color_argument.value
         elif type(color_argument) is bytes or type(color_argument) is str:
             # Convert bytes to str
             if type(color_argument) is bytes:
