@@ -85,8 +85,6 @@ class AbletonPush(threading.Thread):
                             self._send_control_change(channel=msg.channel, control=msg.control, value=7)
                         else:
                             self._send_control_change(channel=msg.channel, control=msg.control, value=1)
-                    if msg.type == 'polytouch':
-                        pass
                 if self.print_midi:
                     print(f"User {msg}")
                 self.midi_parse(msg)
@@ -96,13 +94,15 @@ class AbletonPush(threading.Thread):
                     print(f"Live {msg}")
             sleep(0.001)
 
-    def _mqtt_on_connected(self, client, userdata, flags, rc):
+    @staticmethod
+    def _mqtt_on_connected(client, userdata, flags, rc):
         print(f"MQTT Connected with result code {rc}")
         client.subscribe("ableton_push/#")
 
     def _mqtt_on_message(self, client, userdata, msg):
         # print(f"MQTT {msg.topic} {msg.payload}")
         topics = msg.topic.split("/")
+        # Ex. topic ableton_push/left_play/event/down
         if len(topics) >= 3:
             # Set topics_in[btn.name]["set_light"] = set_light_callback
             if topics[1] in self.controls.topics_in:
@@ -377,7 +377,7 @@ class AbletonPush(threading.Thread):
         d = command + lengths + offset + chars
         self._send_push_sysex(d)
 
-    def display_clear_text(self, line: int = -1, column: int = -1, separator=" "):
+    def display_clear_text(self, line: int = None, column: int = None, separator=" "):
         """
         Clears a line or column on the display.
         :type line: int 0-3 default will clear all
@@ -386,17 +386,26 @@ class AbletonPush(threading.Thread):
         """
         blankline = []
         width = 0
-        if column == -1:
+        if column is None:
             width = 17 * 4  # Full row
             column = 0
-
         else:
+            if column < 0:
+                raise Exception(f"Column {column} can't be less than 0.")
+            if column > 3:
+                raise Exception(f"Column {column} can't be more than 3.")
             width = 17 * 1  # One column
+        if len(separator) != 1:
+            raise Exception(f"Separator {separator} must be 1 character in display_clear_text().")
         blankline = [separator] * width
-        if line == -1:
+        if line is None:
             for i in range(4):
                 self.display_set_text(line=i, offset=column * 17, text=blankline)
         else:
+            if line < 0:
+                raise Exception(f"Line {line} can't be less than 0.")
+            if line > 3:
+                raise Exception(f"Line {line} can't be more than 3.")
             self.display_set_text(line=line, offset=column * 17, text=blankline)
 
     def touch_strip_set_mode(self, mode: int = 0):
@@ -488,10 +497,6 @@ if __name__ == '__main__':
                         action='store_true',
                         help='Lists available MIDI IO ports.')
     args = parser.parse_args()
-
-    # setattr(obj, name, value, /)
-    # Sets the named attribute on the given object to the specified value.
-    # setattr(ableton_push, "a", 42)
 
     print("Ableton Push")
     if args.printports:

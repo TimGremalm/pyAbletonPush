@@ -56,7 +56,7 @@ class TouchBar:
         mode_argument = mode
         mode_to_set = None
         if self.light_mode == mode:
-            print(f"Mode {mode} is already set for {self.name}.")
+            # print(f"Mode {mode} is already set for {self.name}.")
             return
         if type(mode_argument) is int:
             mode_to_set = mode
@@ -128,6 +128,155 @@ class TouchBar:
         return out
 
 
+class Display:
+    def __init__(self, name: str, ableton_push):
+        self.name = name
+        self.ableton_push = ableton_push
+        # Init to 68 spaces on all 4 lines
+        self.text_lines = {}
+        for i in range(1, 5):
+            self.text_lines[i] = " "*4*17
+        self.brightness = None
+        self.contrast = None
+
+    def set_brightness(self, brightness):
+        """
+        :type brightness: int 0-127
+                          str 0-127
+        """
+        brightness_argument = brightness
+        brightness_to_set = None
+        if self.brightness == brightness:
+            print(f"Brightness {brightness} is already set for {self.name}.")
+            return
+        if type(brightness_argument) is int:
+            brightness_to_set = brightness
+        elif type(brightness_argument) is bytes or type(brightness_argument) is str:
+            # Convert bytes to str
+            if type(brightness_argument) is bytes:
+                brightness_argument = brightness_argument.decode()
+            # Parse color argument
+            if try_parse_int(brightness_argument) is not None:
+                # It's an integer
+                brightness_to_set = int(brightness_argument)
+            else:
+                raise Exception(f"Can't parse brightness {brightness_argument}.")
+        else:
+            raise Exception(f"Brightness argument {brightness_argument} is not valid for set_light_mode().")
+
+        # Validate ranges
+        if brightness_to_set < 0:
+            raise Exception(f"Brightness {brightness_to_set} for can't be negative.")
+        if brightness_to_set > 127:
+            raise Exception(f"Brightness {brightness_to_set} can't be more than 127.")
+
+        print(f"Set brightness {brightness_to_set}")
+        self.ableton_push.display_set_brightness(brightness_to_set)
+        self.brightness = brightness_to_set
+
+    def set_contrast(self, contrast):
+        """
+        :type contrast: int 0-127
+                        str 0-127
+        """
+        contrast_argument = contrast
+        contrast_to_set = None
+        if self.contrast == contrast:
+            print(f"Contrast {contrast} is already set for {self.name}.")
+            return
+        if type(contrast_argument) is int:
+            contrast_to_set = contrast
+        elif type(contrast_argument) is bytes or type(contrast_argument) is str:
+            # Convert bytes to str
+            if type(contrast_argument) is bytes:
+                contrast_argument = contrast_argument.decode()
+            # Parse color argument
+            if try_parse_int(contrast_argument) is not None:
+                # It's an integer
+                contrast_to_set = int(contrast_argument)
+            else:
+                raise Exception(f"Can't parse contrast {contrast_argument}.")
+        else:
+            raise Exception(f"Contrast argument {contrast_argument} is not valid for set_light_mode().")
+
+        # Validate ranges
+        if contrast_to_set < 0:
+            raise Exception(f"Contrast {contrast_to_set} for can't be negative.")
+        if contrast_to_set > 127:
+            raise Exception(f"Contrast {contrast_to_set} can't be more than 127.")
+
+        print(f"Set contrast {contrast_to_set}")
+        self.ableton_push.display_set_contrast(contrast_to_set)
+        self.contrast = contrast_to_set
+
+    def set_text(self, payload, row: int = None, col: int = None):
+        # print(f"set_text {row} {col} {payload}")
+        # Validate that we have a row
+        colwidth = int(17 / 2)
+        if row is None:
+            raise Exception("Row must be set.")
+        if row < 1 or row > 4:
+            raise Exception(f"Row {row} must be between 1-4.")
+        if col is None:
+            if len(payload) > 17*4:
+                raise Exception(f"Text length can only be {17*4} on a full row.")
+        else:
+            if col < 1 or col > 8:
+                raise Exception(f"Col {col} must be between 1-8.")
+            if len(payload) > colwidth:
+                raise Exception(f"Text length can only be {colwidth} on a full row.")
+        if len(payload) < 1:
+            raise Exception(f"Text length must be at least 1 character.")
+
+        # Set text
+        text_row = self.text_lines[row]
+        # print(f"text_row '{text_row}' ({len(text_row)})")
+        length = len(payload)
+        if col is None:
+            text_row = payload + text_row[length:]
+        else:
+            start = (col-1)*colwidth
+            if col % 2 == 0:
+                start += 1
+            mid_columns = int((col-1)/2)
+            start += mid_columns
+            diff_column = colwidth - length
+            text_row = text_row[:start] + payload + text_row[start+length:]
+        if len(text_row) != 17*4:
+            raise Exception(f"Length of row {len(text_row)} is not {17*4} characters.")
+        # print(f"text_row '{text_row}' ({len(text_row)})")
+        if self.text_lines[row] == text_row:
+            print("Same as before")
+            return
+        self.ableton_push.display_set_text(text=text_row, line=row-1)
+        self.text_lines[row] = text_row
+
+    def clear_text(self, separator: str = " ", row: int = None, col: int = None):
+        # print(f"clear_text {col}")
+        blank_row = ""
+        if len(separator) == 0:
+            separator = " "
+        elif len(separator) > 1:
+            raise Exception(f"Separator {separator} must be 1 character.")
+        if col is None:
+            blank_row = separator*17*4
+        else:
+            blank_row = separator*8
+        # self.ableton_push.display_clear_text(line=row, column=col, separator=separator)
+        if row is None:
+            # Update all 4 rows in column
+            for i in range(1,5):
+                self.set_text(payload=blank_row, row=i, col=col)
+        else:
+            self.set_text(payload=blank_row, row=row, col=col)
+
+    def __repr__(self):
+        out = f"Display(name='{self.name}', " \
+              f"ableton_push={self.ableton_push}"
+        out += f")"
+        return out
+
+
 class PushControls:
     def __init__(self, ableton_push):
         self.ableton_push = ableton_push
@@ -191,6 +340,8 @@ class PushControls:
         # Touch Bar
         self.add_control_touch_bar(touch=TouchBar(name="touch_bar", ableton_push=ableton_push,
                                                   midi_touch_note=12))
+        # Display
+        self.add_control_display(display=Display(name="display", ableton_push=ableton_push))
 
     def callback_button_set_light(self, topics, control_object, msg):
         # print(f"callback_button_set for {control_object.name} msg {topics} {msg.payload}")
@@ -250,6 +401,39 @@ class PushControls:
             return
         self.ableton_push.mqtt_client.publish(topic=topic, payload=payload)
 
+    def callback_display(self, topics, control_object, msg):
+        # print(f"callback_display for {control_object.name} msg {topics} {msg.payload}")
+        try:
+            if topics[2] == "set_brightness":
+                control_object.set_brightness(msg.payload)
+            elif topics[2] == "set_contrast":
+                control_object.set_contrast(msg.payload)
+            elif topics[2] == "set_text" or topics[2] == "clear_text":
+                # Go through topics, look for row and col
+                row = None
+                col = None
+                payload = msg.payload
+                if type(payload) is bytes:
+                    payload = payload.decode()
+                for i in range(3, len(topics)):
+                    if topics[i].startswith("row"):
+                        row = try_parse_int(topics[i][3:])
+                        if row is None:
+                            raise Exception(f"Couldn't parse {topics[i]} as row.")
+                    if topics[i].startswith("col"):
+                        col = try_parse_int(topics[i][3:])
+                        if col is None:
+                            raise Exception(f"Couldn't parse {topics[i]} as col.")
+                if topics[2] == "set_text":
+                    control_object.set_text(payload=payload, row=row, col=col)
+                else:
+                    control_object.clear_text(col=col, row=row, separator=payload)
+            else:
+                print(f"callback_display() Couldn't parse topic {topics[2]}.")
+                return
+        except Exception as ex:
+            self.ableton_push.mqtt_client.publish(topic=f"{topics[0]}/{topics[1]}/error", payload=str(ex))
+
     def add_control_button(self, btn: Button):
         if btn.luminance_type == LightTypes.RGB and btn.pad_number is None:
             raise Exception("Pad number must be set for luminance_type RGB.")
@@ -292,6 +476,15 @@ class PushControls:
 
         # Set object
         setattr(self, touch.name, touch)
+
+    def add_control_display(self, display: Display):
+        self.topics_in[display.name] = {}
+        self.topics_in[display.name]["set_brightness"] = (display, self.callback_display)
+        self.topics_in[display.name]["set_contrast"] = (display, self.callback_display)
+        self.topics_in[display.name][f"set_text"] = (display, self.callback_display)
+        self.topics_in[display.name][f"clear_text"] = (display, self.callback_display)
+        # Set object
+        setattr(self, display.name, display)
 
 
 if __name__ == '__main__':
