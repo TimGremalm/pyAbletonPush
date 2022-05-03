@@ -4,8 +4,8 @@ import re
 import mido  # https://github.com/mido/mido, also run pip3 install python-rtmidi --install-option="--no-jack"
 import paho.mqtt.client as mqtt
 from AbletonPush.constants import PUSH_TEXT_CAHRACTER_SET_DICT, PUSH_TEXT_CAHRACTER_SET_ALTERNATIVES_DICT, \
-    SYSEX_PREFIX_PUSH, ButtonGridColors, ButtonGridColorsBrightness, MIDIType, LightTypes, LightColorSingle, \
-    LightColorRedYellow
+    SYSEX_PREFIX_PUSH, ColorsButtonGridColors, ColorsButtonGridBrightness, MIDIType, LightTypes, ColorsSingle, \
+    ColorsRedYellow
 from AbletonPush.helper_functions import try_parse_int
 from AbletonPush.structure import Button, PushControls
 
@@ -56,9 +56,9 @@ class AbletonPush(threading.Thread):
         if msg.channel in self.controls.topics_out:
             if midi_id in self.controls.topics_out[msg.channel]:
                 if msg.type in self.controls.topics_out[msg.channel][midi_id]:
-                    btn = self.controls.topics_out[msg.channel][midi_id][msg.type][0]
+                    control_object = self.controls.topics_out[msg.channel][midi_id][msg.type][0]
                     callback = self.controls.topics_out[msg.channel][midi_id][msg.type][1]
-                    callback(btn, msg)
+                    callback(control_object, msg)
 
     def run(self):
         self.midi_user = mido.open_ioport(self.port_user)
@@ -130,10 +130,10 @@ class AbletonPush(threading.Thread):
         color_to_set_rgb = None
         if type(color_argument) is int:
             color_to_set = color
-        elif str(type(color_argument)) == str(LightColorRedYellow)\
-                or str(type(color_argument)) == str(LightColorSingle) \
-                or str(type(color_argument)) == str(ButtonGridColors) \
-                or str(type(color_argument)) == str(ButtonGridColorsBrightness):
+        elif str(type(color_argument)) == str(ColorsRedYellow)\
+                or str(type(color_argument)) == str(ColorsSingle) \
+                or str(type(color_argument)) == str(ColorsButtonGridColors) \
+                or str(type(color_argument)) == str(ColorsButtonGridBrightness):
             color_to_set = color_argument.value
         elif type(color_argument) is bytes or type(color_argument) is str:
             # Convert bytes to str
@@ -145,22 +145,22 @@ class AbletonPush(threading.Thread):
                 color_to_set = int(color_argument)
             elif button.luminance_type.value <= 4:
                 # Single colors, check if it's a named enum
-                if color_argument in LightColorSingle.__members__:
-                    color_to_set = LightColorSingle[color_argument].value
+                if color_argument in ColorsSingle.__members__:
+                    color_to_set = ColorsSingle[color_argument].value
                 else:
                     raise Exception(f"Can't find color {color_argument} in enum LightColorSingle.")
             elif button.luminance_type == LightTypes.RedYellow:
                 # Dual colors, check if it's a named enum
-                if color_argument in LightColorRedYellow.__members__:
-                    color_to_set = LightColorRedYellow[color_argument].value
+                if color_argument in ColorsRedYellow.__members__:
+                    color_to_set = ColorsRedYellow[color_argument].value
                 else:
                     raise Exception(f"Can't find color {color_argument} in enum LightColorRedYellow.")
             elif button.luminance_type == LightTypes.RGB:
                 # RGB colors, check if it's a named enum
-                if color_argument in ButtonGridColorsBrightness.__members__:
-                    color_to_set = ButtonGridColorsBrightness[color_argument].value
-                elif color_argument in ButtonGridColors.__members__:
-                    color_to_set = ButtonGridColors[color_argument].value
+                if color_argument in ColorsButtonGridBrightness.__members__:
+                    color_to_set = ColorsButtonGridBrightness[color_argument].value
+                elif color_argument in ColorsButtonGridColors.__members__:
+                    color_to_set = ColorsButtonGridColors[color_argument].value
                 else:
                     # Or check if it's 3 integers comma-separated
                     rgb = color_argument.split(",")
@@ -187,20 +187,20 @@ class AbletonPush(threading.Thread):
             # Single colors
             if color_to_set < 0:
                 raise Exception(f"Color {color_to_set} for Single can't be negative.")
-            if color_to_set >= len(LightColorSingle.__members__):
+            if color_to_set >= len(ColorsSingle.__members__):
                 raise Exception(f"Color {color_to_set} can't be more than max of LightColorSingle.")
         elif button.luminance_type == LightTypes.RedYellow:
             # Dual colors
             if color_to_set < 0:
                 raise Exception(f"Color {color_to_set} for Dual can't be negative.")
-            if color_to_set >= len(LightColorRedYellow.__members__):
+            if color_to_set >= len(ColorsRedYellow.__members__):
                 raise Exception(f"Color {color_to_set} can't be more than max of LightColorRedYellow.")
         elif button.luminance_type == LightTypes.RGB:
             # RGB colors
             if color_to_set is not None:
                 if color_to_set < 0:
                     raise Exception(f"Color {color_to_set} for RGB can't be negative.")
-                if color_to_set >= len(ButtonGridColors.__members__):
+                if color_to_set >= len(ColorsButtonGridColors.__members__):
                     raise Exception(f"Color {color_to_set} can't be more than max of ButtonGridColors.")
             elif color_to_set_rgb is not None:
                 if color_to_set_rgb[0] < 0:

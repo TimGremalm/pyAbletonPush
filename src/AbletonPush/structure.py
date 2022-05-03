@@ -25,7 +25,7 @@ class Button:
 
     def __repr__(self):
         out = f"Button(name='{self.name}', " \
-              f"ableton_push={self.ableton_push}, " \
+              f"ableton_push=<self.ableton_push>, " \
               f"midi_type={self.midi_type}, channel={self.channel}, midi_id={self.midi_id}, " \
               f"luminance_type={self.luminance_type}"
         if self.pad_number is not None:
@@ -122,7 +122,7 @@ class TouchBar:
 
     def __repr__(self):
         out = f"TouchBar(name='{self.name}', " \
-              f"ableton_push={self.ableton_push}, " \
+              f"ableton_push=<self.ableton_push>, " \
               f"midi_touch_note={self.midi_touch_note}"
         out += f")"
         return out
@@ -246,7 +246,7 @@ class Display:
             raise Exception(f"Length of row {len(text_row)} is not {17*4} characters.")
         # print(f"text_row '{text_row}' ({len(text_row)})")
         if self.text_lines[row] == text_row:
-            print("Same as before")
+            # print("Same as before")
             return
         self.ableton_push.display_set_text(text=text_row, line=row-1)
         self.text_lines[row] = text_row
@@ -272,7 +272,23 @@ class Display:
 
     def __repr__(self):
         out = f"Display(name='{self.name}', " \
-              f"ableton_push={self.ableton_push}"
+              f"ableton_push=<self.ableton_push>"
+        out += f")"
+        return out
+
+
+class Knob:
+    def __init__(self, name: str, ableton_push, midi_touch: int, midi_rotate: int):
+        self.name = name
+        self.ableton_push = ableton_push
+        self.midi_touch = midi_touch
+        self.midi_rotate = midi_rotate
+        self.midi_channel = 0
+
+    def __repr__(self):
+        out = f"Know(name='{self.name}', " \
+              f"ableton_push=<self.ableton_push>"
+        out += f", midi_touch={self.midi_touch}, midi_rotate={self.midi_rotate}"
         out += f")"
         return out
 
@@ -310,12 +326,129 @@ class PushControls:
         self.add_control_button(btn=Button(name="left_duplicate", ableton_push=ableton_push,
                                            midi_type=MIDIType.ControlChange,
                                            midi_id=88, luminance_type=LightTypes.Yellow))
-        self.add_control_button(btn=Button(name="left_new", ableton_push=ableton_push, midi_type=MIDIType.ControlChange,
+        self.add_control_button(btn=Button(name="left_new", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
                                            midi_id=87, luminance_type=LightTypes.Yellow))
-        self.add_control_button(btn=Button(name="left_record", ableton_push=ableton_push, midi_type=MIDIType.ControlChange,
+        self.add_control_button(btn=Button(name="left_record", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
                                            midi_id=86, luminance_type=LightTypes.Red))
-        self.add_control_button(btn=Button(name="left_play", ableton_push=ableton_push, midi_type=MIDIType.ControlChange,
+        self.add_control_button(btn=Button(name="left_play", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
                                            midi_id=85, luminance_type=LightTypes.Green))
+        # Right Buttons
+        self.add_control_button(btn=Button(name="right_master", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=28, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="right_stop", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=29, luminance_type=LightTypes.Red))
+        # Right Buttons
+        self.add_control_button(btn=Button(name="right_grid_row1_1_32t", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=43, luminance_type=LightTypes.RedYellow))
+        self.add_control_button(btn=Button(name="right_grid_row2_1_32", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=42, luminance_type=LightTypes.RedYellow))
+        self.add_control_button(btn=Button(name="right_grid_row3_1_16t", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=41, luminance_type=LightTypes.RedYellow))
+        self.add_control_button(btn=Button(name="right_grid_row4_1_16", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=40, luminance_type=LightTypes.RedYellow))
+        self.add_control_button(btn=Button(name="right_grid_row5_1_8t", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=39, luminance_type=LightTypes.RedYellow))
+        self.add_control_button(btn=Button(name="right_grid_row6_1_8", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=38, luminance_type=LightTypes.RedYellow))
+        self.add_control_button(btn=Button(name="right_grid_row7_1_4t", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=37, luminance_type=LightTypes.RedYellow))
+        self.add_control_button(btn=Button(name="right_grid_row8_1_4", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=36, luminance_type=LightTypes.RedYellow))
+        # Navigate Buttons
+        self.add_control_button(btn=Button(name="navigate_arrow_left", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=44, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_arrow_right", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=45, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_arrow_up", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=46, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_arrow_down", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=47, luminance_type=LightTypes.Yellow))
+        # Space
+        self.add_control_button(btn=Button(name="navigate_select", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=48, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_shift", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=49, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_note", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=50, luminance_type=LightTypes.White))
+        self.add_control_button(btn=Button(name="navigate_session", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=51, luminance_type=LightTypes.White))
+        self.add_control_button(btn=Button(name="navigate_add_effect", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=52, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_add_track", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=53, luminance_type=LightTypes.Yellow))
+        # Space
+        self.add_control_button(btn=Button(name="navigate_octave_down", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=54, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_octave_up", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=55, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_repeat", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=56, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_accent", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=57, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_scales", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=58, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_user", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=59, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_mute", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=60, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_solo", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=61, luminance_type=LightTypes.Blue))
+        self.add_control_button(btn=Button(name="navigate_page_down", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=62, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_page_up", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=63, luminance_type=LightTypes.Yellow))
+        # Space
+        self.add_control_button(btn=Button(name="navigate_device", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=110, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_browse", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=111, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_track", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=112, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_clip", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=113, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_volume", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=114, luminance_type=LightTypes.Yellow))
+        self.add_control_button(btn=Button(name="navigate_pan_and_send", ableton_push=ableton_push,
+                                           midi_type=MIDIType.ControlChange,
+                                           midi_id=115, luminance_type=LightTypes.Yellow))
         # Grid of pads 8x8
         for pad_number in range(8*8):
             col = (pad_number % 8) + 1  # Get column by modula 8 plus 8
@@ -327,21 +460,32 @@ class PushControls:
                                                midi_type=MIDIType.Note,
                                                midi_id=note, luminance_type=LightTypes.RGB,
                                                pad_number=pad_number))
-        # RGB row above grid
+        # RGB row above grid, and Red-Yellow button row above that
         for i in range(8):
-            pad_number = 64 + i
             col = i + 1
-            cc = 102 + i
-            pad_name = f"grid_col{col}_row0"
-            self.add_control_button(btn=Button(name=pad_name, ableton_push=ableton_push,
+            self.add_control_button(btn=Button(name=f"grid_col{col}_rowt2", ableton_push=ableton_push,
                                                midi_type=MIDIType.ControlChange,
-                                               midi_id=cc, luminance_type=LightTypes.RGB,
-                                               pad_number=pad_number))
+                                               midi_id=102+i, luminance_type=LightTypes.RGB,
+                                               pad_number=64+i))
+            self.add_control_button(btn=Button(name=f"grid_col{col}_rowt1", ableton_push=ableton_push,
+                                               midi_type=MIDIType.ControlChange,
+                                               midi_id=20+i, luminance_type=LightTypes.RedYellow))
         # Touch Bar
         self.add_control_touch_bar(touch=TouchBar(name="touch_bar", ableton_push=ableton_push,
                                                   midi_touch_note=12))
         # Display
         self.add_control_display(display=Display(name="display", ableton_push=ableton_push))
+        # Knob
+        self.add_control_knob(knob=Knob(name="left_knob_buttons", ableton_push=ableton_push,
+                                        midi_touch=10, midi_rotate=14))
+        self.add_control_knob(knob=Knob(name="left_knob_touchpad", ableton_push=ableton_push,
+                                        midi_touch=9, midi_rotate=15))
+        self.add_control_knob(knob=Knob(name="right_knob", ableton_push=ableton_push,
+                                        midi_touch=8, midi_rotate=79))
+        # 8 knobs above grid columns
+        for i in range(8):
+            self.add_control_knob(knob=Knob(name=f"grid_col{i+1}_knob", ableton_push=ableton_push,
+                                            midi_touch=0+i, midi_rotate=71+i))
 
     def callback_button_set_light(self, topics, control_object, msg):
         # print(f"callback_button_set for {control_object.name} msg {topics} {msg.payload}")
@@ -434,6 +578,25 @@ class PushControls:
         except Exception as ex:
             self.ableton_push.mqtt_client.publish(topic=f"{topics[0]}/{topics[1]}/error", payload=str(ex))
 
+    def callback_knob_event(self, control_object, msg):
+        if msg.type == "control_change":
+            if msg.value > 0 and msg.value < 64:
+                payload = f"{msg.value}"
+                topic = f"ableton_push/{control_object.name}/event/rotate"
+            else:
+                payload = f"{(128-msg.value) * -1}"
+                topic = f"ableton_push/{control_object.name}/event/rotate"
+        elif msg.type == "note_on":
+            if msg.velocity == 0:
+                payload = f"{msg.velocity}"
+                topic = f"ableton_push/{control_object.name}/event/release"
+            else:
+                payload = f"{msg.velocity}"
+                topic = f"ableton_push/{control_object.name}/event/touch"
+        else:
+            return
+        self.ableton_push.mqtt_client.publish(topic=topic, payload=payload)
+
     def add_control_button(self, btn: Button):
         if btn.luminance_type == LightTypes.RGB and btn.pad_number is None:
             raise Exception("Pad number must be set for luminance_type RGB.")
@@ -485,6 +648,20 @@ class PushControls:
         self.topics_in[display.name][f"clear_text"] = (display, self.callback_display)
         # Set object
         setattr(self, display.name, display)
+
+    def add_control_knob(self, knob: Knob):
+        # Set topics_out[channel][midi_id][type] = (knob_object, knob_callback)
+        if knob.midi_channel not in self.topics_out:
+            self.topics_out[knob.midi_channel] = {}
+        if knob.midi_touch not in self.topics_out[knob.midi_channel]:
+            self.topics_out[knob.midi_channel][knob.midi_touch] = {}
+        if knob.midi_rotate not in self.topics_out[knob.midi_channel]:
+            self.topics_out[knob.midi_channel][knob.midi_rotate] = {}
+        self.topics_out[knob.midi_channel][knob.midi_touch]['note_on'] = (knob, self.callback_knob_event)
+        self.topics_out[knob.midi_channel][knob.midi_touch]['note_off'] = (knob, self.callback_knob_event)
+        self.topics_out[knob.midi_channel][knob.midi_rotate]['control_change'] = (knob, self.callback_knob_event)
+        # Set object
+        setattr(self, knob.name, knob)
 
 
 if __name__ == '__main__':

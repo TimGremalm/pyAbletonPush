@@ -26,7 +26,333 @@ class LightTypes(Enum):
     NoLight = 7
 
 
-class LightColorRedYellow(Enum):
+ButtonGridColorsRGB = {
+    0: (0x00, 0x00, 0x00),  # BlackBlack
+    1: (0x1E, 0x1E, 0x1E),  # GreyEerieBlack
+    2: (0x7F, 0x7F, 0x7F),  # GreyGray
+    3: (0xFF, 0xFF, 0xFF),  # WhiteWhite
+    4: (0xFF, 0x4C, 0x4C),  # RedTartOrange
+    5: (0xFF, 0x00, 0x00),  # RedRed
+    6: (0x59, 0x00, 0x00),  # RedBloodRed
+    7: (0x19, 0x00, 0x00),  # BrownDiesel
+    8: (0xFF, 0xBD, 0x6C),  # YellowMellowApricot
+    9: (0xFF, 0x54, 0x00),  # OrangeMysticRed
+    10: (0x59, 0x1D, 0x00),  # BrownSealBrown
+    11: (0x27, 0x1B, 0x00),  # BrownZinnwalditeBrown
+    12: (0xFF, 0xFF, 0x4C),  # YellowLemonYellow
+    13: (0xFF, 0xFF, 0x00),  # YellowYellow
+    14: (0x59, 0x59, 0x00),  # GreenDarkBronzeCoin
+    15: (0x19, 0x19, 0x00),  # BrownBlackChocolate
+    16: (0x88, 0xFF, 0x4C),  # GreenKiwi
+    17: (0x54, 0xFF, 0x00),  # GreenChlorophyllGreen
+    18: (0x1D, 0x59, 0x00),  # GreenJapaneseLaurel
+    19: (0x14, 0x2B, 0x00),  # GreenBlackChocolate
+    20: (0x4C, 0xFF, 0x4C),  # GreenScreamingGreen
+    21: (0x00, 0xFF, 0x00),  # GreenLime
+    22: (0x00, 0x59, 0x00),  # GreenDarkGreenX11
+    23: (0x00, 0x19, 0x00),  # GreenVampireBlack
+    24: (0x4C, 0xFF, 0x5E),  # GreenScreamingGreen2
+    25: (0x00, 0xFF, 0x19),  # GreenElectricGreen
+    26: (0x00, 0x59, 0x0D),  # GreenEmeraldGreen
+    27: (0x00, 0x19, 0x02),  # GreenVampireBlack2
+    28: (0x4C, 0xFF, 0x88),  # GreenVeryLightMalachiteGreen
+    29: (0x00, 0xFF, 0x55),  # GreenMalachite
+    30: (0x00, 0x59, 0x1D),  # GreenForestGreenTraditional
+    31: (0x00, 0x1F, 0x12),  # GreenBurnham
+    32: (0x4C, 0xFF, 0xB7),  # BlueAquamarineBright
+    33: (0x00, 0xFF, 0x99),  # GreenMediumSpringGreen
+    34: (0x00, 0x59, 0x35),  # GreenCastletonGreen
+    35: (0x00, 0x19, 0x12),  # GreenSwamp
+    36: (0x4C, 0xC3, 0xFF),  # BluePictonBlue
+    37: (0x00, 0xA9, 0xFF),  # BlueDeepSkyBlue
+    38: (0x00, 0x41, 0x52),  # GreenMidnightGreenEagleGreen
+    39: (0x00, 0x10, 0x19),  # GreenRichBlackFOGRA29
+    40: (0x4C, 0x88, 0xFF),  # BlueDodgerBlue
+    41: (0x00, 0x55, 0xFF),  # BlueNavyBlue
+    42: (0x00, 0x1D, 0x59),  # BlueOxfordBlue
+    43: (0x00, 0x08, 0x19),  # BlueBlueCharcoal
+    44: (0x4C, 0x4C, 0xFF),  # BlueUltramarineBlue
+    45: (0x00, 0x00, 0xFF),  # BlueBlue
+    46: (0x00, 0x00, 0x59),  # BlueStratos
+    47: (0x00, 0x00, 0x19),  # BlueBlackRussian
+    48: (0x87, 0x4C, 0xFF),  # BlueLavenderIndigo
+    49: (0x54, 0x00, 0xFF),  # VioletElectricUltramarine
+    50: (0x19, 0x00, 0x64),  # BlueDeepViolet
+    51: (0x0F, 0x00, 0x30),  # VioletBlackRussian
+    52: (0xFF, 0x4C, 0xFF),  # RedShockingPinkCrayola
+    53: (0xFF, 0x00, 0xFF),  # VioletMagentaFuchsia
+    54: (0x59, 0x00, 0x59),  # VioletImperialPurple
+    55: (0x19, 0x00, 0x19),  # VioletSmokyBlack
+    56: (0xFF, 0x4C, 0x87),  # RedSasquatchSocks
+    57: (0xFF, 0x00, 0x54),  # RedTorchRed
+    58: (0x59, 0x00, 0x1D),  # RedDarkScarlet
+    59: (0x22, 0x00, 0x13),  # VioletLicorice
+    60: (0xFF, 0x15, 0x00),  # RedCandyAppleRed
+    61: (0x99, 0x35, 0x00),  # BrownBrown
+    62: (0x79, 0x51, 0x00),  # BrownDarkBronze
+    63: (0x43, 0x64, 0x00),  # GreenMetallicGreen
+    64: (0x03, 0x39, 0x00),  # GreenDarkGreen
+    65: (0x00, 0x57, 0x35),  # GreenAquaDeep
+    66: (0x00, 0x54, 0x7F),  # BlueDarkCerulean
+    67: (0x00, 0x00, 0xFF),  # BlueBlueDuplicate
+    68: (0x00, 0x45, 0x4F),  # GreenSherpaBlue
+    69: (0x25, 0x00, 0xCC),  # BlueInterdimensionalBlue
+    70: (0x7F, 0x7F, 0x7F),  # GreyGray2
+    71: (0x20, 0x20, 0x20),  # GreyRaisinBlack
+    72: (0xFF, 0x00, 0x00),  # RedRed2
+    73: (0xBD, 0xFF, 0x2D),  # GreenGreenYellow
+    74: (0xAF, 0xED, 0x06),  # GreenSpringBud
+    75: (0x64, 0xFF, 0x09),  # GreenBrightGreen
+    76: (0x10, 0x8B, 0x00),  # GreenIndiaGreen
+    77: (0x00, 0xFF, 0x87),  # GreenGuppieGreen
+    78: (0x00, 0xA9, 0xFF),  # BlueDeepSkyBlueDuplicate
+    79: (0x00, 0x2A, 0xFF),  # BlueBlueBright
+    80: (0x3F, 0x00, 0xFF),  # BlueElectricUltramarine
+    81: (0x7A, 0x00, 0xFF),  # VioletViolet
+    82: (0xB2, 0x1A, 0x7D),  # VioletMediumVioletRed
+    83: (0x40, 0x21, 0x00),  # BrownCola
+    84: (0xFF, 0x4A, 0x00),  # OrangeInternationalOrangeAerospace
+    85: (0x88, 0xE1, 0x06),  # GreenAlienArmpit
+    86: (0x72, 0xFF, 0x15),  # GreenLawnGreen
+    87: (0x00, 0xFF, 0x00),  # GreenLimeDuplicate
+    88: (0x3B, 0xFF, 0x26),  # GreenNeonGreen
+    89: (0x59, 0xFF, 0x71),  # GreenSeaGreen2
+    90: (0x38, 0xFF, 0xCC),  # BlueBrightTurquoise
+    91: (0x5B, 0x8A, 0xFF),  # BlueBlueberry
+    92: (0x31, 0x51, 0xC6),  # BlueCeruleanBlue
+    93: (0x87, 0x7F, 0xE9),  # BlueMediumPurple
+    94: (0xD3, 0x1D, 0xFF),  # VioletVividOrchid
+    95: (0xFF, 0x00, 0x5D),  # RedFolly
+    96: (0xFF, 0x7F, 0x00),  # OrangeOrange
+    97: (0xB9, 0xB0, 0x00),  # YellowGreenCitrus
+    98: (0x90, 0xFF, 0x00),  # GreenMangoGreen
+    99: (0x83, 0x5D, 0x07),  # BrownYukonGold
+    100: (0x39, 0x2B, 0x00),  # BrownAmericanBronze
+    101: (0x14, 0x4C, 0x10),  # GreenParsley
+    102: (0x0D, 0x50, 0x38),  # GreenBlueGreen
+    103: (0x15, 0x15, 0x2A),  # BlueMidnightExpress
+    104: (0x16, 0x20, 0x5A),  # BlueMidnightBlue
+    105: (0x69, 0x3C, 0x1C),  # BrownPullmanBrownUPSBrown
+    106: (0xA8, 0x00, 0x0A),  # RedDarkCandyAppleRed
+    107: (0xDE, 0x51, 0x3D),  # RedCarminePink
+    108: (0xD8, 0x6A, 0x1C),  # BrownChocolate
+    109: (0xFF, 0xE1, 0x26),  # YellowBananaYellow
+    110: (0x9E, 0xE1, 0x2F),  # GreenOliveDrab3
+    111: (0x67, 0xB5, 0x0F),  # GreenKellyGreen
+    112: (0x1E, 0x1E, 0x30),  # BlueDarkGunmetal
+    113: (0xDC, 0xFF, 0x6B),  # GreenBoogerBuster
+    114: (0x80, 0xFF, 0xBD),  # BlueAquamarine
+    115: (0x9A, 0x99, 0xFF),  # BlueMaximumBluePurple
+    116: (0x8E, 0x66, 0xFF),  # BlueVioletsAreBlue
+    117: (0x40, 0x40, 0x40),  # GreyBlackOlive
+    118: (0x75, 0x75, 0x75),  # GreySonicSilver
+    119: (0xE0, 0xFF, 0xFF),  # BlueLightCyan
+    120: (0xA0, 0x00, 0x00),  # RedBrightRed
+    121: (0x35, 0x00, 0x00),  # BrownBlackBean
+    122: (0x1A, 0xD0, 0x00),  # GreenYellowGreen
+    123: (0x07, 0x42, 0x00),  # GreenDeepFir
+    124: (0xB9, 0xB0, 0x00),  # YellowGreenCitrusDuplicate
+    125: (0x3F, 0x31, 0x00),  # BrownDarkBronzeCoin
+    126: (0xB3, 0x5F, 0x00),  # OrangeWindsorTan
+    127: (0x4B, 0x15, 0x02),  # BrownFrenchPuce
+}
+
+
+class ColorsButtonGridColors(Enum):
+    BlackBlack = 0
+    GreyEerieBlack = 1
+    GreyGray = 2
+    WhiteWhite = 3
+    RedTartOrange = 4
+    RedRed = 5
+    RedBloodRed = 6
+    BrownDiesel = 7
+    YellowMellowApricot = 8
+    OrangeMysticRed = 9
+    BrownSealBrown = 10
+    BrownZinnwalditeBrown = 11
+    YellowLemonYellow = 12
+    YellowYellow = 13
+    GreenDarkBronzeCoin = 14
+    BrownBlackChocolate = 15
+    GreenKiwi = 16
+    GreenChlorophyllGreen = 17
+    GreenJapaneseLaurel = 18
+    GreenBlackChocolate = 19
+    GreenScreamingGreen = 20
+    GreenLime = 21
+    GreenDarkGreenX11 = 22
+    GreenVampireBlack = 23
+    GreenScreamingGreen2 = 24
+    GreenElectricGreen = 25
+    GreenEmeraldGreen = 26
+    GreenVampireBlack2 = 27
+    GreenVeryLightMalachiteGreen = 28
+    GreenMalachite = 29
+    GreenForestGreenTraditional = 30
+    GreenBurnham = 31
+    BlueAquamarineBright = 32
+    GreenMediumSpringGreen = 33
+    GreenCastletonGreen = 34
+    GreenSwamp = 35
+    BluePictonBlue = 36
+    BlueDeepSkyBlue = 37
+    GreenMidnightGreenEagleGreen = 38
+    GreenRichBlackFOGRA29 = 39
+    BlueDodgerBlue = 40
+    BlueNavyBlue = 41
+    BlueOxfordBlue = 42
+    BlueBlueCharcoal = 43
+    BlueUltramarineBlue = 44
+    BlueBlue = 45
+    BlueStratos = 46
+    BlueBlackRussian = 47
+    BlueLavenderIndigo = 48
+    VioletElectricUltramarine = 49
+    BlueDeepViolet = 50
+    VioletBlackRussian = 51
+    RedShockingPinkCrayola = 52
+    VioletMagentaFuchsia = 53
+    VioletImperialPurple = 54
+    VioletSmokyBlack = 55
+    RedSasquatchSocks = 56
+    RedTorchRed = 57
+    RedDarkScarlet = 58
+    VioletLicorice = 59
+    RedCandyAppleRed = 60
+    BrownBrown = 61
+    BrownDarkBronze = 62
+    GreenMetallicGreen = 63
+    GreenDarkGreen = 64
+    GreenAquaDeep = 65
+    BlueDarkCerulean = 66
+    BlueBlueDuplicate = 67
+    GreenSherpaBlue = 68
+    BlueInterdimensionalBlue = 69
+    GreyGray2 = 70
+    GreyRaisinBlack = 71
+    RedRed2 = 72
+    GreenGreenYellow = 73
+    GreenSpringBud = 74
+    GreenBrightGreen = 75
+    GreenIndiaGreen = 76
+    GreenGuppieGreen = 77
+    BlueDeepSkyBlueDuplicate = 78
+    BlueBlueBright = 79
+    BlueElectricUltramarine = 80
+    VioletViolet = 81
+    VioletMediumVioletRed = 82
+    BrownCola = 83
+    OrangeInternationalOrangeAerospace = 84
+    GreenAlienArmpit = 85
+    GreenLawnGreen = 86
+    GreenLimeDuplicate = 87
+    GreenNeonGreen = 88
+    GreenSeaGreen2 = 89
+    BlueBrightTurquoise = 90
+    BlueBlueberry = 91
+    BlueCeruleanBlue = 92
+    BlueMediumPurple = 93
+    VioletVividOrchid = 94
+    RedFolly = 95
+    OrangeOrange = 96
+    YellowGreenCitrus = 97
+    GreenMangoGreen = 98
+    BrownYukonGold = 99
+    BrownAmericanBronze = 100
+    GreenParsley = 101
+    GreenBlueGreen = 102
+    BlueMidnightExpress = 103
+    BlueMidnightBlue = 104
+    BrownPullmanBrownUPSBrown = 105
+    RedDarkCandyAppleRed = 106
+    RedCarminePink = 107
+    BrownChocolate = 108
+    YellowBananaYellow = 109
+    GreenOliveDrab3 = 110
+    GreenKellyGreen = 111
+    BlueDarkGunmetal = 112
+    GreenBoogerBuster = 113
+    BlueAquamarine = 114
+    BlueMaximumBluePurple = 115
+    BlueVioletsAreBlue = 116
+    GreyBlackOlive = 117
+    GreySonicSilver = 118
+    BlueLightCyan = 119
+    RedBrightRed = 120
+    BrownBlackBean = 121
+    GreenYellowGreen = 122
+    GreenDeepFir = 123
+    YellowGreenCitrusDuplicate = 124
+    BrownDarkBronzeCoin = 125
+    OrangeWindsorTan = 126
+    BrownFrenchPuce = 127
+
+
+class ColorsButtonGridBrightness(Enum):
+    White0 = ColorsButtonGridColors.BlackBlack.value
+    White12 = ColorsButtonGridColors.GreyEerieBlack.value
+    White50 = ColorsButtonGridColors.GreyGray.value
+    White100 = ColorsButtonGridColors.WhiteWhite.value
+    Red65 = ColorsButtonGridColors.RedTartOrange.value
+    Red50 = ColorsButtonGridColors.RedRed.value
+    Red17 = ColorsButtonGridColors.RedBloodRed.value
+    Red05 = ColorsButtonGridColors.BrownDiesel.value
+    OrangeMysticRed71 = ColorsButtonGridColors.YellowMellowApricot.value
+    OrangeMysticRed50 = ColorsButtonGridColors.OrangeMysticRed.value
+    OrangeMysticRed17 = ColorsButtonGridColors.BrownSealBrown.value
+    OrangeMysticRed08 = ColorsButtonGridColors.BrownZinnwalditeBrown.value
+    Yellow65 = ColorsButtonGridColors.YellowLemonYellow.value
+    Yellow50 = ColorsButtonGridColors.YellowYellow.value
+    Yellow17 = ColorsButtonGridColors.GreenDarkBronzeCoin.value
+    Yellow05 = ColorsButtonGridColors.BrownBlackChocolate.value
+    GreenBright65 = ColorsButtonGridColors.GreenKiwi.value
+    GreenBright50 = ColorsButtonGridColors.GreenChlorophyllGreen.value
+    GreenBright17 = ColorsButtonGridColors.GreenJapaneseLaurel.value
+    GreenBright08 = ColorsButtonGridColors.GreenBlackChocolate.value
+    GreenLime65 = ColorsButtonGridColors.GreenScreamingGreen.value
+    GreenLime50 = ColorsButtonGridColors.GreenLime.value
+    GreenLime17 = ColorsButtonGridColors.GreenDarkGreenX11.value
+    GreenLime05 = ColorsButtonGridColors.GreenVampireBlack.value
+    GreenElectric65 = ColorsButtonGridColors.GreenScreamingGreen2.value
+    GreenElectric50 = ColorsButtonGridColors.GreenElectricGreen.value
+    GreenElectric17 = ColorsButtonGridColors.GreenEmeraldGreen.value
+    GreenElectric05 = ColorsButtonGridColors.GreenVampireBlack2.value
+    GreenMalachite65 = ColorsButtonGridColors.GreenVeryLightMalachiteGreen.value
+    GreenMalachite50 = ColorsButtonGridColors.GreenMalachite.value
+    GreenMalachite17 = ColorsButtonGridColors.GreenForestGreenTraditional.value
+    GreenMalachite06 = ColorsButtonGridColors.GreenBurnham.value
+    Cyan65 = ColorsButtonGridColors.BlueAquamarineBright.value
+    Cyan50 = ColorsButtonGridColors.GreenMediumSpringGreen.value
+    Cyan17 = ColorsButtonGridColors.GreenCastletonGreen.value
+    Cyan05 = ColorsButtonGridColors.GreenSwamp.value
+    BlueDeepSky65 = ColorsButtonGridColors.BluePictonBlue.value
+    BlueDeepSky50 = ColorsButtonGridColors.BlueDeepSkyBlue.value
+    BlueDeepSky16 = ColorsButtonGridColors.GreenMidnightGreenEagleGreen.value
+    BlueDeepSky05 = ColorsButtonGridColors.GreenRichBlackFOGRA29.value
+    BlueNavy65 = ColorsButtonGridColors.BlueDodgerBlue.value
+    BlueNavy50 = ColorsButtonGridColors.BlueNavyBlue.value
+    BlueNavy17 = ColorsButtonGridColors.BlueOxfordBlue.value
+    BlueNavy05 = ColorsButtonGridColors.BlueBlueCharcoal.value
+    Blue65 = ColorsButtonGridColors.BlueUltramarineBlue.value
+    Blue50 = ColorsButtonGridColors.BlueBlue.value
+    Blue17 = ColorsButtonGridColors.BlueStratos.value
+    Blue05 = ColorsButtonGridColors.BlueBlackRussian.value
+    VioletElectricUltramarine65 = ColorsButtonGridColors.BlueLavenderIndigo.value
+    VioletElectricUltramarine50 = ColorsButtonGridColors.VioletElectricUltramarine.value
+    VioletElectricUltramarine20 = ColorsButtonGridColors.BlueDeepViolet.value
+    VioletElectricUltramarine09 = ColorsButtonGridColors.VioletBlackRussian.value
+    VioletMagenta65 = ColorsButtonGridColors.RedShockingPinkCrayola.value
+    VioletMagenta50 = ColorsButtonGridColors.VioletMagentaFuchsia.value
+    VioletMagenta17 = ColorsButtonGridColors.VioletImperialPurple.value
+    VioletMagenta05 = ColorsButtonGridColors.VioletSmokyBlack.value
+    RedTorch65 = ColorsButtonGridColors.RedSasquatchSocks.value
+    RedTorch50 = ColorsButtonGridColors.RedTorchRed.value
+    RedTorch17 = ColorsButtonGridColors.RedDarkScarlet.value
+    RedTorch07 = ColorsButtonGridColors.VioletLicorice.value
+
+
+class ColorsRedYellow(Enum):
     Black = 0
     RedDim = 1
     RedDimBlinkSlow = 2
@@ -54,7 +380,7 @@ class LightColorRedYellow(Enum):
     GreenLitBlinkFast = 24
 
 
-class LightColorSingle(Enum):
+class ColorsSingle(Enum):
     Black = 0
     Dim = 1
     DimBlinkSlow = 2
@@ -343,329 +669,3 @@ PUSH_TEXT_CAHRACTER_SET_ALTERNATIVES_DICT = {
     'å': PUSH_TEXT_CAHRACTER_SET_DICT[PushTextCharacters.LetterASmall.value],
     'Å': PUSH_TEXT_CAHRACTER_SET_DICT[PushTextCharacters.LetterACapital.value],
 }
-
-
-ButtonGridColorsRGB = {
-    0: (0x00, 0x00, 0x00),  # BlackBlack
-    1: (0x1E, 0x1E, 0x1E),  # GreyEerieBlack
-    2: (0x7F, 0x7F, 0x7F),  # GreyGray
-    3: (0xFF, 0xFF, 0xFF),  # WhiteWhite
-    4: (0xFF, 0x4C, 0x4C),  # RedTartOrange
-    5: (0xFF, 0x00, 0x00),  # RedRed
-    6: (0x59, 0x00, 0x00),  # RedBloodRed
-    7: (0x19, 0x00, 0x00),  # BrownDiesel
-    8: (0xFF, 0xBD, 0x6C),  # YellowMellowApricot
-    9: (0xFF, 0x54, 0x00),  # OrangeMysticRed
-    10: (0x59, 0x1D, 0x00),  # BrownSealBrown
-    11: (0x27, 0x1B, 0x00),  # BrownZinnwalditeBrown
-    12: (0xFF, 0xFF, 0x4C),  # YellowLemonYellow
-    13: (0xFF, 0xFF, 0x00),  # YellowYellow
-    14: (0x59, 0x59, 0x00),  # GreenDarkBronzeCoin
-    15: (0x19, 0x19, 0x00),  # BrownBlackChocolate
-    16: (0x88, 0xFF, 0x4C),  # GreenKiwi
-    17: (0x54, 0xFF, 0x00),  # GreenChlorophyllGreen
-    18: (0x1D, 0x59, 0x00),  # GreenJapaneseLaurel
-    19: (0x14, 0x2B, 0x00),  # GreenBlackChocolate
-    20: (0x4C, 0xFF, 0x4C),  # GreenScreamingGreen
-    21: (0x00, 0xFF, 0x00),  # GreenLime
-    22: (0x00, 0x59, 0x00),  # GreenDarkGreenX11
-    23: (0x00, 0x19, 0x00),  # GreenVampireBlack
-    24: (0x4C, 0xFF, 0x5E),  # GreenScreamingGreen2
-    25: (0x00, 0xFF, 0x19),  # GreenElectricGreen
-    26: (0x00, 0x59, 0x0D),  # GreenEmeraldGreen
-    27: (0x00, 0x19, 0x02),  # GreenVampireBlack2
-    28: (0x4C, 0xFF, 0x88),  # GreenVeryLightMalachiteGreen
-    29: (0x00, 0xFF, 0x55),  # GreenMalachite
-    30: (0x00, 0x59, 0x1D),  # GreenForestGreenTraditional
-    31: (0x00, 0x1F, 0x12),  # GreenBurnham
-    32: (0x4C, 0xFF, 0xB7),  # BlueAquamarineBright
-    33: (0x00, 0xFF, 0x99),  # GreenMediumSpringGreen
-    34: (0x00, 0x59, 0x35),  # GreenCastletonGreen
-    35: (0x00, 0x19, 0x12),  # GreenSwamp
-    36: (0x4C, 0xC3, 0xFF),  # BluePictonBlue
-    37: (0x00, 0xA9, 0xFF),  # BlueDeepSkyBlue
-    38: (0x00, 0x41, 0x52),  # GreenMidnightGreenEagleGreen
-    39: (0x00, 0x10, 0x19),  # GreenRichBlackFOGRA29
-    40: (0x4C, 0x88, 0xFF),  # BlueDodgerBlue
-    41: (0x00, 0x55, 0xFF),  # BlueNavyBlue
-    42: (0x00, 0x1D, 0x59),  # BlueOxfordBlue
-    43: (0x00, 0x08, 0x19),  # BlueBlueCharcoal
-    44: (0x4C, 0x4C, 0xFF),  # BlueUltramarineBlue
-    45: (0x00, 0x00, 0xFF),  # BlueBlue
-    46: (0x00, 0x00, 0x59),  # BlueStratos
-    47: (0x00, 0x00, 0x19),  # BlueBlackRussian
-    48: (0x87, 0x4C, 0xFF),  # BlueLavenderIndigo
-    49: (0x54, 0x00, 0xFF),  # VioletElectricUltramarine
-    50: (0x19, 0x00, 0x64),  # BlueDeepViolet
-    51: (0x0F, 0x00, 0x30),  # VioletBlackRussian
-    52: (0xFF, 0x4C, 0xFF),  # RedShockingPinkCrayola
-    53: (0xFF, 0x00, 0xFF),  # VioletMagentaFuchsia
-    54: (0x59, 0x00, 0x59),  # VioletImperialPurple
-    55: (0x19, 0x00, 0x19),  # VioletSmokyBlack
-    56: (0xFF, 0x4C, 0x87),  # RedSasquatchSocks
-    57: (0xFF, 0x00, 0x54),  # RedTorchRed
-    58: (0x59, 0x00, 0x1D),  # RedDarkScarlet
-    59: (0x22, 0x00, 0x13),  # VioletLicorice
-    60: (0xFF, 0x15, 0x00),  # RedCandyAppleRed
-    61: (0x99, 0x35, 0x00),  # BrownBrown
-    62: (0x79, 0x51, 0x00),  # BrownDarkBronze
-    63: (0x43, 0x64, 0x00),  # GreenMetallicGreen
-    64: (0x03, 0x39, 0x00),  # GreenDarkGreen
-    65: (0x00, 0x57, 0x35),  # GreenAquaDeep
-    66: (0x00, 0x54, 0x7F),  # BlueDarkCerulean
-    67: (0x00, 0x00, 0xFF),  # BlueBlueDuplicate
-    68: (0x00, 0x45, 0x4F),  # GreenSherpaBlue
-    69: (0x25, 0x00, 0xCC),  # BlueInterdimensionalBlue
-    70: (0x7F, 0x7F, 0x7F),  # GreyGray2
-    71: (0x20, 0x20, 0x20),  # GreyRaisinBlack
-    72: (0xFF, 0x00, 0x00),  # RedRed2
-    73: (0xBD, 0xFF, 0x2D),  # GreenGreenYellow
-    74: (0xAF, 0xED, 0x06),  # GreenSpringBud
-    75: (0x64, 0xFF, 0x09),  # GreenBrightGreen
-    76: (0x10, 0x8B, 0x00),  # GreenIndiaGreen
-    77: (0x00, 0xFF, 0x87),  # GreenGuppieGreen
-    78: (0x00, 0xA9, 0xFF),  # BlueDeepSkyBlueDuplicate
-    79: (0x00, 0x2A, 0xFF),  # BlueBlueBright
-    80: (0x3F, 0x00, 0xFF),  # BlueElectricUltramarine
-    81: (0x7A, 0x00, 0xFF),  # VioletViolet
-    82: (0xB2, 0x1A, 0x7D),  # VioletMediumVioletRed
-    83: (0x40, 0x21, 0x00),  # BrownCola
-    84: (0xFF, 0x4A, 0x00),  # OrangeInternationalOrangeAerospace
-    85: (0x88, 0xE1, 0x06),  # GreenAlienArmpit
-    86: (0x72, 0xFF, 0x15),  # GreenLawnGreen
-    87: (0x00, 0xFF, 0x00),  # GreenLimeDuplicate
-    88: (0x3B, 0xFF, 0x26),  # GreenNeonGreen
-    89: (0x59, 0xFF, 0x71),  # GreenSeaGreen2
-    90: (0x38, 0xFF, 0xCC),  # BlueBrightTurquoise
-    91: (0x5B, 0x8A, 0xFF),  # BlueBlueberry
-    92: (0x31, 0x51, 0xC6),  # BlueCeruleanBlue
-    93: (0x87, 0x7F, 0xE9),  # BlueMediumPurple
-    94: (0xD3, 0x1D, 0xFF),  # VioletVividOrchid
-    95: (0xFF, 0x00, 0x5D),  # RedFolly
-    96: (0xFF, 0x7F, 0x00),  # OrangeOrange
-    97: (0xB9, 0xB0, 0x00),  # YellowGreenCitrus
-    98: (0x90, 0xFF, 0x00),  # GreenMangoGreen
-    99: (0x83, 0x5D, 0x07),  # BrownYukonGold
-    100: (0x39, 0x2B, 0x00),  # BrownAmericanBronze
-    101: (0x14, 0x4C, 0x10),  # GreenParsley
-    102: (0x0D, 0x50, 0x38),  # GreenBlueGreen
-    103: (0x15, 0x15, 0x2A),  # BlueMidnightExpress
-    104: (0x16, 0x20, 0x5A),  # BlueMidnightBlue
-    105: (0x69, 0x3C, 0x1C),  # BrownPullmanBrownUPSBrown
-    106: (0xA8, 0x00, 0x0A),  # RedDarkCandyAppleRed
-    107: (0xDE, 0x51, 0x3D),  # RedCarminePink
-    108: (0xD8, 0x6A, 0x1C),  # BrownChocolate
-    109: (0xFF, 0xE1, 0x26),  # YellowBananaYellow
-    110: (0x9E, 0xE1, 0x2F),  # GreenOliveDrab3
-    111: (0x67, 0xB5, 0x0F),  # GreenKellyGreen
-    112: (0x1E, 0x1E, 0x30),  # BlueDarkGunmetal
-    113: (0xDC, 0xFF, 0x6B),  # GreenBoogerBuster
-    114: (0x80, 0xFF, 0xBD),  # BlueAquamarine
-    115: (0x9A, 0x99, 0xFF),  # BlueMaximumBluePurple
-    116: (0x8E, 0x66, 0xFF),  # BlueVioletsAreBlue
-    117: (0x40, 0x40, 0x40),  # GreyBlackOlive
-    118: (0x75, 0x75, 0x75),  # GreySonicSilver
-    119: (0xE0, 0xFF, 0xFF),  # BlueLightCyan
-    120: (0xA0, 0x00, 0x00),  # RedBrightRed
-    121: (0x35, 0x00, 0x00),  # BrownBlackBean
-    122: (0x1A, 0xD0, 0x00),  # GreenYellowGreen
-    123: (0x07, 0x42, 0x00),  # GreenDeepFir
-    124: (0xB9, 0xB0, 0x00),  # YellowGreenCitrusDuplicate
-    125: (0x3F, 0x31, 0x00),  # BrownDarkBronzeCoin
-    126: (0xB3, 0x5F, 0x00),  # OrangeWindsorTan
-    127: (0x4B, 0x15, 0x02),  # BrownFrenchPuce
-}
-
-
-class ButtonGridColors(Enum):
-    BlackBlack = 0
-    GreyEerieBlack = 1
-    GreyGray = 2
-    WhiteWhite = 3
-    RedTartOrange = 4
-    RedRed = 5
-    RedBloodRed = 6
-    BrownDiesel = 7
-    YellowMellowApricot = 8
-    OrangeMysticRed = 9
-    BrownSealBrown = 10
-    BrownZinnwalditeBrown = 11
-    YellowLemonYellow = 12
-    YellowYellow = 13
-    GreenDarkBronzeCoin = 14
-    BrownBlackChocolate = 15
-    GreenKiwi = 16
-    GreenChlorophyllGreen = 17
-    GreenJapaneseLaurel = 18
-    GreenBlackChocolate = 19
-    GreenScreamingGreen = 20
-    GreenLime = 21
-    GreenDarkGreenX11 = 22
-    GreenVampireBlack = 23
-    GreenScreamingGreen2 = 24
-    GreenElectricGreen = 25
-    GreenEmeraldGreen = 26
-    GreenVampireBlack2 = 27
-    GreenVeryLightMalachiteGreen = 28
-    GreenMalachite = 29
-    GreenForestGreenTraditional = 30
-    GreenBurnham = 31
-    BlueAquamarineBright = 32
-    GreenMediumSpringGreen = 33
-    GreenCastletonGreen = 34
-    GreenSwamp = 35
-    BluePictonBlue = 36
-    BlueDeepSkyBlue = 37
-    GreenMidnightGreenEagleGreen = 38
-    GreenRichBlackFOGRA29 = 39
-    BlueDodgerBlue = 40
-    BlueNavyBlue = 41
-    BlueOxfordBlue = 42
-    BlueBlueCharcoal = 43
-    BlueUltramarineBlue = 44
-    BlueBlue = 45
-    BlueStratos = 46
-    BlueBlackRussian = 47
-    BlueLavenderIndigo = 48
-    VioletElectricUltramarine = 49
-    BlueDeepViolet = 50
-    VioletBlackRussian = 51
-    RedShockingPinkCrayola = 52
-    VioletMagentaFuchsia = 53
-    VioletImperialPurple = 54
-    VioletSmokyBlack = 55
-    RedSasquatchSocks = 56
-    RedTorchRed = 57
-    RedDarkScarlet = 58
-    VioletLicorice = 59
-    RedCandyAppleRed = 60
-    BrownBrown = 61
-    BrownDarkBronze = 62
-    GreenMetallicGreen = 63
-    GreenDarkGreen = 64
-    GreenAquaDeep = 65
-    BlueDarkCerulean = 66
-    BlueBlueDuplicate = 67
-    GreenSherpaBlue = 68
-    BlueInterdimensionalBlue = 69
-    GreyGray2 = 70
-    GreyRaisinBlack = 71
-    RedRed2 = 72
-    GreenGreenYellow = 73
-    GreenSpringBud = 74
-    GreenBrightGreen = 75
-    GreenIndiaGreen = 76
-    GreenGuppieGreen = 77
-    BlueDeepSkyBlueDuplicate = 78
-    BlueBlueBright = 79
-    BlueElectricUltramarine = 80
-    VioletViolet = 81
-    VioletMediumVioletRed = 82
-    BrownCola = 83
-    OrangeInternationalOrangeAerospace = 84
-    GreenAlienArmpit = 85
-    GreenLawnGreen = 86
-    GreenLimeDuplicate = 87
-    GreenNeonGreen = 88
-    GreenSeaGreen2 = 89
-    BlueBrightTurquoise = 90
-    BlueBlueberry = 91
-    BlueCeruleanBlue = 92
-    BlueMediumPurple = 93
-    VioletVividOrchid = 94
-    RedFolly = 95
-    OrangeOrange = 96
-    YellowGreenCitrus = 97
-    GreenMangoGreen = 98
-    BrownYukonGold = 99
-    BrownAmericanBronze = 100
-    GreenParsley = 101
-    GreenBlueGreen = 102
-    BlueMidnightExpress = 103
-    BlueMidnightBlue = 104
-    BrownPullmanBrownUPSBrown = 105
-    RedDarkCandyAppleRed = 106
-    RedCarminePink = 107
-    BrownChocolate = 108
-    YellowBananaYellow = 109
-    GreenOliveDrab3 = 110
-    GreenKellyGreen = 111
-    BlueDarkGunmetal = 112
-    GreenBoogerBuster = 113
-    BlueAquamarine = 114
-    BlueMaximumBluePurple = 115
-    BlueVioletsAreBlue = 116
-    GreyBlackOlive = 117
-    GreySonicSilver = 118
-    BlueLightCyan = 119
-    RedBrightRed = 120
-    BrownBlackBean = 121
-    GreenYellowGreen = 122
-    GreenDeepFir = 123
-    YellowGreenCitrusDuplicate = 124
-    BrownDarkBronzeCoin = 125
-    OrangeWindsorTan = 126
-    BrownFrenchPuce = 127
-
-
-class ButtonGridColorsBrightness(Enum):
-    White0 = ButtonGridColors.BlackBlack.value
-    White12 = ButtonGridColors.GreyEerieBlack.value
-    White50 = ButtonGridColors.GreyGray.value
-    White100 = ButtonGridColors.WhiteWhite.value
-    Red65 = ButtonGridColors.RedTartOrange.value
-    Red50 = ButtonGridColors.RedRed.value
-    Red17 = ButtonGridColors.RedBloodRed.value
-    Red05 = ButtonGridColors.BrownDiesel.value
-    OrangeMysticRed71 = ButtonGridColors.YellowMellowApricot.value
-    OrangeMysticRed50 = ButtonGridColors.OrangeMysticRed.value
-    OrangeMysticRed17 = ButtonGridColors.BrownSealBrown.value
-    OrangeMysticRed08 = ButtonGridColors.BrownZinnwalditeBrown.value
-    Yellow65 = ButtonGridColors.YellowLemonYellow.value
-    Yellow50 = ButtonGridColors.YellowYellow.value
-    Yellow17 = ButtonGridColors.GreenDarkBronzeCoin.value
-    Yellow05 = ButtonGridColors.BrownBlackChocolate.value
-    GreenBright65 = ButtonGridColors.GreenKiwi.value
-    GreenBright50 = ButtonGridColors.GreenChlorophyllGreen.value
-    GreenBright17 = ButtonGridColors.GreenJapaneseLaurel.value
-    GreenBright08 = ButtonGridColors.GreenBlackChocolate.value
-    GreenLime65 = ButtonGridColors.GreenScreamingGreen.value
-    GreenLime50 = ButtonGridColors.GreenLime.value
-    GreenLime17 = ButtonGridColors.GreenDarkGreenX11.value
-    GreenLime05 = ButtonGridColors.GreenVampireBlack.value
-    GreenElectric65 = ButtonGridColors.GreenScreamingGreen2.value
-    GreenElectric50 = ButtonGridColors.GreenElectricGreen.value
-    GreenElectric17 = ButtonGridColors.GreenEmeraldGreen.value
-    GreenElectric05 = ButtonGridColors.GreenVampireBlack2.value
-    GreenMalachite65 = ButtonGridColors.GreenVeryLightMalachiteGreen.value
-    GreenMalachite50 = ButtonGridColors.GreenMalachite.value
-    GreenMalachite17 = ButtonGridColors.GreenForestGreenTraditional.value
-    GreenMalachite06 = ButtonGridColors.GreenBurnham.value
-    Cyan65 = ButtonGridColors.BlueAquamarineBright.value
-    Cyan50 = ButtonGridColors.GreenMediumSpringGreen.value
-    Cyan17 = ButtonGridColors.GreenCastletonGreen.value
-    Cyan05 = ButtonGridColors.GreenSwamp.value
-    BlueDeepSky65 = ButtonGridColors.BluePictonBlue.value
-    BlueDeepSky50 = ButtonGridColors.BlueDeepSkyBlue.value
-    BlueDeepSky16 = ButtonGridColors.GreenMidnightGreenEagleGreen.value
-    BlueDeepSky05 = ButtonGridColors.GreenRichBlackFOGRA29.value
-    BlueNavy65 = ButtonGridColors.BlueDodgerBlue.value
-    BlueNavy50 = ButtonGridColors.BlueNavyBlue.value
-    BlueNavy17 = ButtonGridColors.BlueOxfordBlue.value
-    BlueNavy05 = ButtonGridColors.BlueBlueCharcoal.value
-    Blue65 = ButtonGridColors.BlueUltramarineBlue.value
-    Blue50 = ButtonGridColors.BlueBlue.value
-    Blue17 = ButtonGridColors.BlueStratos.value
-    Blue05 = ButtonGridColors.BlueBlackRussian.value
-    VioletElectricUltramarine65 = ButtonGridColors.BlueLavenderIndigo.value
-    VioletElectricUltramarine50 = ButtonGridColors.VioletElectricUltramarine.value
-    VioletElectricUltramarine20 = ButtonGridColors.BlueDeepViolet.value
-    VioletElectricUltramarine09 = ButtonGridColors.VioletBlackRussian.value
-    VioletMagenta65 = ButtonGridColors.RedShockingPinkCrayola.value
-    VioletMagenta50 = ButtonGridColors.VioletMagentaFuchsia.value
-    VioletMagenta17 = ButtonGridColors.VioletImperialPurple.value
-    VioletMagenta05 = ButtonGridColors.VioletSmokyBlack.value
-    RedTorch65 = ButtonGridColors.RedSasquatchSocks.value
-    RedTorch50 = ButtonGridColors.RedTorchRed.value
-    RedTorch17 = ButtonGridColors.RedDarkScarlet.value
-    RedTorch07 = ButtonGridColors.VioletLicorice.value
