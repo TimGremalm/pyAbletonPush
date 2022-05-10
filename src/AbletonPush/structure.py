@@ -1,4 +1,4 @@
-from AbletonPush import try_parse_int
+from AbletonPush.helper_functions import try_parse_int
 from AbletonPush.constants import *
 
 
@@ -666,6 +666,4 @@ class PushControls:
 
 if __name__ == '__main__':
     a = Button(name="button_a", midi_type=MIDIType.Note, channel=0, midi_id=46, luminance_type=LightTypes.RedYellow)
-    # print(str(a))
     print(repr(a))
-    # print(a.is_dirty())
