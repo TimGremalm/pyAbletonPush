@@ -532,12 +532,12 @@ class PushControls:
         if msg.type == "note_on":
             payload = f"{msg.velocity}"
             if msg.velocity == 0:
-                topic = f"ableton_push/{control_object.name}/event/up"
+                topic = f"ableton_push/{control_object.name}/event/release"
             else:
-                topic = f"ableton_push/{control_object.name}/event/down"
+                topic = f"ableton_push/{control_object.name}/event/touch"
         elif msg.type == "note_off":
             payload = f"{msg.velocity}"
-            topic = f"ableton_push/{control_object.name}/event/up"
+            topic = f"ableton_push/{control_object.name}/event/release"
         elif msg.type == "pitchwheel":
             payload = f"{msg.pitch}"
             topic = f"ableton_push/{control_object.name}/event/pitch"
