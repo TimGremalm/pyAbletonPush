@@ -135,7 +135,7 @@ class Display:
         # Init to 68 spaces on all 4 lines
         self.text_lines = {}
         for i in range(1, 5):
-            self.text_lines[i] = " "*4*17
+            self.text_lines[i] = "*"*4*17
         self.brightness = None
         self.contrast = None
 
