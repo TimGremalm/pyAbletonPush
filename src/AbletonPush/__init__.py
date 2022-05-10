@@ -473,7 +473,6 @@ class AbletonPush(threading.Thread):
 
 if __name__ == '__main__':
     import argparse
-    from pysh.shell import Pysh  # https://github.com/TimGremalm/pysh
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--printmidi', '-p',
@@ -512,6 +511,8 @@ if __name__ == '__main__':
                                    test_mode=args.test)
         ableton_push.start()
         if args.shell:
+            from pysh.shell import Pysh  # https://github.com/TimGremalm/pysh
+
             banner = ['Ableton Push Shell',
                       'You may leave this shell by typing `exit`, `q` or pressing Ctrl+D',
                       'ableton_push is the main object.']
