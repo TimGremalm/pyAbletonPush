@@ -7,7 +7,7 @@ from AbletonPush.constants import PUSH_TEXT_CAHRACTER_SET_DICT, PUSH_TEXT_CAHRAC
     SYSEX_PREFIX_PUSH, ColorsButtonGridColors, ColorsButtonGridBrightness, MIDIType, LightTypes, ColorsSingle, \
     ColorsRedYellow
 from AbletonPush.helper_functions import try_parse_int
-from AbletonPush.structure import Button, PushControls
+from AbletonPush.structure import Button, PushControlsMidi2MQTT
 
 
 class AbletonPush(threading.Thread):
@@ -52,12 +52,12 @@ class AbletonPush(threading.Thread):
             midi_id = 'pitchwheel'
         else:
             return
-        # Callback if MIDI message in self.controls.topics_out
-        if msg.channel in self.controls.topics_out:
-            if midi_id in self.controls.topics_out[msg.channel]:
-                if msg.type in self.controls.topics_out[msg.channel][midi_id]:
-                    control_object = self.controls.topics_out[msg.channel][midi_id][msg.type][0]
-                    callback = self.controls.topics_out[msg.channel][midi_id][msg.type][1]
+        # Callback if MIDI message in self.controls.midi_triggers
+        if msg.channel in self.controls.midi_triggers:
+            if midi_id in self.controls.midi_triggers[msg.channel]:
+                if msg.type in self.controls.midi_triggers[msg.channel][midi_id]:
+                    control_object = self.controls.midi_triggers[msg.channel][midi_id][msg.type][0]
+                    callback = self.controls.midi_triggers[msg.channel][midi_id][msg.type][1]
                     callback(control_object, msg)
 
     def run(self):
@@ -68,7 +68,7 @@ class AbletonPush(threading.Thread):
         self.mqtt_client.on_message = self._mqtt_on_message
         self.mqtt_client.connect(host="127.0.0.1")
         self.mqtt_client.loop_start()
-        self.controls = PushControls(ableton_push=self)
+        self.controls = PushControlsMidi2MQTT(ableton_push=self)
         while True:
             if self.quit:
                 self.mqtt_client.loop_stop()
@@ -94,21 +94,20 @@ class AbletonPush(threading.Thread):
                     print(f"Live {msg}")
             sleep(0.001)
 
-    @staticmethod
-    def _mqtt_on_connected(client, userdata, flags, rc):
+    def _mqtt_on_connected(self, client, userdata, flags, rc):
         print(f"MQTT Connected with result code {rc}")
-        client.subscribe("ableton_push/#")
+        client.subscribe(f"{self.controls.mqtt_prefix}/#")
 
     def _mqtt_on_message(self, client, userdata, msg):
         # print(f"MQTT {msg.topic} {msg.payload}")
         topics = msg.topic.split("/")
         # Ex. topic ableton_push/left_play/event/down
         if len(topics) >= 3:
-            # Set topics_in[btn.name]["set_light"] = set_light_callback
-            if topics[1] in self.controls.topics_in:
-                if topics[2] in self.controls.topics_in[topics[1]]:
-                    control_object = self.controls.topics_in[topics[1]][topics[2]][0]
-                    callback = self.controls.topics_in[topics[1]][topics[2]][1]
+            # Set mqtt_topics_in[btn.name]["set_light"] = set_light_callback
+            if topics[1] in self.controls.mqtt_topics_in:
+                if topics[2] in self.controls.mqtt_topics_in[topics[1]]:
+                    control_object = self.controls.mqtt_topics_in[topics[1]][topics[2]][0]
+                    callback = self.controls.mqtt_topics_in[topics[1]][topics[2]][1]
                     callback(topics, control_object, msg)
 
     def __repr__(self):
