@@ -113,7 +113,7 @@ class TouchBar:
 
         # Check that touch bar is set in addressable
         if self.light_mode != TouchStripModes.Addressable:
-            print("Manually setting mode to TouchStripModes.Addressable.")
+            # print("Manually setting mode to TouchStripModes.Addressable.")
             self.set_light_mode(TouchStripModes.Addressable)
 
         # Set mode
@@ -147,7 +147,7 @@ class Display:
         brightness_argument = brightness
         brightness_to_set = None
         if self.brightness == brightness:
-            print(f"Brightness {brightness} is already set for {self.name}.")
+            # print(f"Brightness {brightness} is already set for {self.name}.")
             return
         if type(brightness_argument) is int:
             brightness_to_set = brightness
@@ -170,7 +170,7 @@ class Display:
         if brightness_to_set > 127:
             raise Exception(f"Brightness {brightness_to_set} can't be more than 127.")
 
-        print(f"Set brightness {brightness_to_set}")
+        # print(f"Set brightness {brightness_to_set}")
         self.ableton_push.display_set_brightness(brightness_to_set)
         self.brightness = brightness_to_set
 
@@ -182,7 +182,7 @@ class Display:
         contrast_argument = contrast
         contrast_to_set = None
         if self.contrast == contrast:
-            print(f"Contrast {contrast} is already set for {self.name}.")
+            # print(f"Contrast {contrast} is already set for {self.name}.")
             return
         if type(contrast_argument) is int:
             contrast_to_set = contrast
@@ -205,7 +205,7 @@ class Display:
         if contrast_to_set > 127:
             raise Exception(f"Contrast {contrast_to_set} can't be more than 127.")
 
-        print(f"Set contrast {contrast_to_set}")
+        # print(f"Set contrast {contrast_to_set}")
         self.ableton_push.display_set_contrast(contrast_to_set)
         self.contrast = contrast_to_set
 
