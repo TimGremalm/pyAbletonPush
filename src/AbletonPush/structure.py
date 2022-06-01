@@ -17,10 +17,115 @@ class Button:
         self.light = None
 
     def set_light(self, color):
+        """
+        Send color to appropriate MIDI note/control.
+        :param color: int color palette,
+                      str "Red,Green,Blue" (ex. "255,127,0") can only be used if button-luminance_type is RGB or
+                      textual representation according to luminance_type (ex. 'RedLit').
+        """
         if self.light == color:
             # print(f"Color {color} is already set for {self.name}.")
             return
-        self.ableton_push.button_set_color(self, color)
+        # Parse argument
+        color_argument = color
+        color_to_set = None
+        color_to_set_rgb = None
+        if type(color_argument) is int:
+            color_to_set = color
+        elif str(type(color_argument)) == str(ColorsRedYellow)\
+                or str(type(color_argument)) == str(ColorsSingle) \
+                or str(type(color_argument)) == str(ColorsButtonGridColors) \
+                or str(type(color_argument)) == str(ColorsButtonGridBrightness):
+            color_to_set = color_argument.value
+        elif type(color_argument) is bytes or type(color_argument) is str:
+            # Convert bytes to str
+            if type(color_argument) is bytes:
+                color_argument = color_argument.decode()
+            # Parse color argument
+            if try_parse_int(color_argument) is not None:
+                # It's an integer
+                color_to_set = int(color_argument)
+            elif self.luminance_type.value <= 4:
+                # Single colors, check if it's a named enum
+                if color_argument in ColorsSingle.__members__:
+                    color_to_set = ColorsSingle[color_argument].value
+                else:
+                    raise Exception(f"Can't find color {color_argument} in enum LightColorSingle.")
+            elif self.luminance_type == LightTypes.RedYellow:
+                # Dual colors, check if it's a named enum
+                if color_argument in ColorsRedYellow.__members__:
+                    color_to_set = ColorsRedYellow[color_argument].value
+                else:
+                    raise Exception(f"Can't find color {color_argument} in enum LightColorRedYellow.")
+            elif self.luminance_type == LightTypes.RGB:
+                # RGB colors, check if it's a named enum
+                if color_argument in ColorsButtonGridBrightness.__members__:
+                    color_to_set = ColorsButtonGridBrightness[color_argument].value
+                elif color_argument in ColorsButtonGridColors.__members__:
+                    color_to_set = ColorsButtonGridColors[color_argument].value
+                else:
+                    # Or check if it's 3 integers comma-separated
+                    rgb = color_argument.split(",")
+                    if len(rgb) == 3:
+                        red = try_parse_int(rgb[0])
+                        green = try_parse_int(rgb[1])
+                        blue = try_parse_int(rgb[2])
+                        if red is not None and green is not None and blue is not None:
+                            color_to_set_rgb = (red, green, blue)
+                        else:
+                            raise Exception(f"Couldn't parse RGB from color {color_argument}.")
+                    else:
+                        raise Exception(f"Can't find color {color_argument} in enum ButtonGridColorsBrightness or "
+                                        f"ButtonGridColors.")
+            else:
+                raise Exception(f"Couldn't parse color argument {color_argument}.")
+        else:
+            raise Exception(f"Color argument {color_argument} is not valid for button_set_color().")
+        # print(type(color))
+        # print(f"color_to_set {color_to_set}, color_to_set_rgb {color_to_set_rgb}")
+
+        # Validate ranges
+        if self.luminance_type.value <= 4:
+            # Single colors
+            if color_to_set < 0:
+                raise Exception(f"Color {color_to_set} for Single can't be negative.")
+            if color_to_set >= len(ColorsSingle.__members__):
+                raise Exception(f"Color {color_to_set} can't be more than max of LightColorSingle.")
+        elif self.luminance_type == LightTypes.RedYellow:
+            # Dual colors
+            if color_to_set < 0:
+                raise Exception(f"Color {color_to_set} for Dual can't be negative.")
+            if color_to_set >= len(ColorsRedYellow.__members__):
+                raise Exception(f"Color {color_to_set} can't be more than max of LightColorRedYellow.")
+        elif self.luminance_type == LightTypes.RGB:
+            # RGB colors
+            if color_to_set is not None:
+                if color_to_set < 0:
+                    raise Exception(f"Color {color_to_set} for RGB can't be negative.")
+                if color_to_set >= len(ColorsButtonGridColors.__members__):
+                    raise Exception(f"Color {color_to_set} can't be more than max of ButtonGridColors.")
+            elif color_to_set_rgb is not None:
+                if color_to_set_rgb[0] < 0:
+                    raise Exception(f"Color {color_to_set_rgb} red for RGB can't be negative.")
+                if color_to_set_rgb[0] > 255:
+                    raise Exception(f"Color {color_to_set_rgb} red for RGB can't be more than 255.")
+                if color_to_set_rgb[1] < 0:
+                    raise Exception(f"Color {color_to_set_rgb} green for RGB can't be negative.")
+                if color_to_set_rgb[1] > 255:
+                    raise Exception(f"Color {color_to_set_rgb} green for RGB can't be more than 255.")
+                if color_to_set_rgb[2] < 0:
+                    raise Exception(f"Color {color_to_set_rgb} blue for RGB can't be negative.")
+                if color_to_set_rgb[2] > 255:
+                    raise Exception(f"Color {color_to_set_rgb} blue for RGB can't be more than 255.")
+            else:
+                raise Exception(f"A color must be set {color_argument}.")
+
+        # Send command
+        if color_to_set_rgb:
+            self.ableton_push.button_set_color(self, color_to_set_rgb)
+        else:
+            self.ableton_push.button_set_color(self, color_to_set)
+        # Update state
         self.light = color
 
     def __repr__(self):
@@ -58,6 +163,7 @@ class TouchBar:
         if self.light_mode == mode:
             # print(f"Mode {mode} is already set for {self.name}.")
             return
+        # Parse argument
         if type(mode_argument) is int:
             mode_to_set = mode
         elif str(type(mode_argument)) == str(TouchStripModes):
@@ -83,8 +189,9 @@ class TouchBar:
         if mode_to_set >= len(TouchStripModes.__members__):
             raise Exception(f"Mode {mode_to_set} can't be more than max of TouchStripModes.")
 
-        # Set mode
+        # Send command
         self.ableton_push.touch_strip_set_mode(mode_to_set)
+        # Update state
         self.light_mode = mode
         self.light_array = None
 
@@ -98,6 +205,7 @@ class TouchBar:
         if self.light_array == array:
             # print(f"Array {array} is already set for {self.name}.")
             return
+        # Parse argument
         if type(array_argument) is list:
             array_to_set = array_argument
         elif type(array_argument) is bytes or type(array_argument) is str:
@@ -116,8 +224,9 @@ class TouchBar:
             # print("Manually setting mode to TouchStripModes.Addressable.")
             self.set_light_mode(TouchStripModes.Addressable)
 
-        # Set mode
+        # Send command
         self.ableton_push.touch_strip_set_leds(array_to_set)
+        # Update state
         self.light_array = array
 
     def __repr__(self):
@@ -149,6 +258,7 @@ class Display:
         if self.brightness == brightness:
             # print(f"Brightness {brightness} is already set for {self.name}.")
             return
+        # Parse argument
         if type(brightness_argument) is int:
             brightness_to_set = brightness
         elif type(brightness_argument) is bytes or type(brightness_argument) is str:
@@ -170,8 +280,10 @@ class Display:
         if brightness_to_set > 127:
             raise Exception(f"Brightness {brightness_to_set} can't be more than 127.")
 
+        # Send command
         # print(f"Set brightness {brightness_to_set}")
         self.ableton_push.display_set_brightness(brightness_to_set)
+        # Update state
         self.brightness = brightness_to_set
 
     def set_contrast(self, contrast):
@@ -184,6 +296,7 @@ class Display:
         if self.contrast == contrast:
             # print(f"Contrast {contrast} is already set for {self.name}.")
             return
+        # Parse argument
         if type(contrast_argument) is int:
             contrast_to_set = contrast
         elif type(contrast_argument) is bytes or type(contrast_argument) is str:
@@ -205,12 +318,15 @@ class Display:
         if contrast_to_set > 127:
             raise Exception(f"Contrast {contrast_to_set} can't be more than 127.")
 
+        # Send command
         # print(f"Set contrast {contrast_to_set}")
         self.ableton_push.display_set_contrast(contrast_to_set)
+        # Update state
         self.contrast = contrast_to_set
 
     def set_text(self, payload, row: int = None, col: int = None):
         # print(f"set_text {row} {col} {payload}")
+        # Parse argument
         # Validate that we have a row
         colwidth = int(17 / 2)
         if row is None:
@@ -248,12 +364,15 @@ class Display:
         if self.text_lines[row] == text_row:
             # print("Same as before")
             return
+        # Send command
         self.ableton_push.display_set_text(text=text_row, line=row-1)
+        # Update state
         self.text_lines[row] = text_row
 
     def clear_text(self, separator: str = " ", row: int = None, col: int = None):
         # print(f"clear_text {col}")
         blank_row = ""
+        # Parse argument
         if len(separator) == 0:
             separator = " "
         elif len(separator) > 1:
@@ -262,6 +381,7 @@ class Display:
             blank_row = separator*17*4
         else:
             blank_row = separator*8
+        # Send command
         # self.ableton_push.display_clear_text(line=row, column=col, separator=separator)
         if row is None:
             # Update all 4 rows in column
