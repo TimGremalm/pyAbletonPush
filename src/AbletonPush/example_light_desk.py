@@ -15,13 +15,7 @@ from AbletonPush.structure import TouchBar as PushTouchBar
 from AbletonPush.structure import Display as PushDisplay
 
 
-class ButtonState(Enum):
-    Init = 0
-    Down = 1
-    Up = 3
-
-
-class ZValue:
+class ButtonValue:
     def __init__(self, name: str, description: str, light_hue: float, light_saturation: float,
                  button, light_desk, group_row, group_col):
         self.name = name
@@ -39,9 +33,42 @@ class ZValue:
         self.group_col.buttons[self.name] = self
         setattr(self.group_col, self.name, self)
         self.light_desk.values.append(self)
+        self.light_desk.callbacks[(self.light_desk.controls_push.mqtt_prefix,
+                                   self.button.name)] = (self.cb_event, self)
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value_to_set):
+        self._value = value_to_set
+        if self._value < 0:
+            self._value = 0
+        if self._value > 65535:
+            self._value = 65535
+
+    @property
+    def value_float(self):
+        return self._value / 65535
+
+    @value_float.setter
+    def value_float(self, value_to_set):
+        self._value = int(value_to_set * 65535)
+        if self._value < 0:
+            self._value = 0
+        if self._value > 65535:
+            self._value = 65535
+
+    def cb_event(self, *args, **kwargs):
+        # print(f"cb_event {args} {kwargs}.")
+        if kwargs['event'] == 'down':
+            print(kwargs['data'])
+        elif kwargs['event'] == 'up':
+            print(kwargs['data'])
 
     def __repr__(self):
-        out = f"ZValue(name='{self.name}'"
+        out = f"ButtonValue(name='{self.name}'"
         out += f", description={self.description}"
         out += f", group_row={self.group_row}"
         out += f", group_col={self.group_col}"
@@ -62,8 +89,9 @@ class GroupCol:
         setattr(self.group_row, self.name, self)
         self.buttons = {}
         for btn_i, btn in enumerate(buttons):
-            ZValue(name=btn['name'], description=btn['description'], light_hue=btn['hue'], light_saturation=btn['sat'],
-                   button=btn['button'], light_desk=self.light_desk, group_row=self.group_row, group_col=self)
+            ButtonValue(name=btn['name'], description=btn['description'],
+                        light_hue=btn['hue'], light_saturation=btn['sat'],
+                        button=btn['button'], light_desk=self.light_desk, group_row=self.group_row, group_col=self)
 
     def __repr__(self):
         out = f"GroupCol(name='{self.name}'"
@@ -113,8 +141,24 @@ class LightDesk(threading.Thread):
         self.osc = None
         self.groups = {}
         self.values = []
+        self.callbacks = {}
 
-    def add_groups(self):
+    def cb_event_sliders(self, *args, **kwargs):
+        # print(f"cb_event {args} {kwargs}.")
+        if kwargs['event'] == 'touch':
+            print(kwargs['data'])
+        elif kwargs['event'] == 'release':
+            print(kwargs['data'])
+
+    def cb_event_encoders(self, *args, **kwargs):
+        if kwargs['event'] == 'rotate':
+            print(kwargs['data'])
+
+    def cb_event_beat_tap(self, *args, **kwargs):
+        if kwargs['event'] == 'down':
+            print(kwargs['data'])
+
+    def add_controls_and_groups(self):
         GroupRow(name='A', description="Group A", light_desk=self,
                  cols=[[{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
                          'button': self.controls_push.grid_col1_rowt2},
@@ -268,6 +312,27 @@ class LightDesk(threading.Thread):
                          'button': self.controls_push.grid_col8_row8}],
                        ]
                  )
+        # Add 8 sliders
+        self.callbacks[(self.controls_faderport.mqtt_prefix, "col1_slider")] = (self.cb_event_sliders, self.controls_faderport.col1_slider)
+        self.callbacks[(self.controls_faderport.mqtt_prefix, "col2_slider")] = (self.cb_event_sliders, self.controls_faderport.col2_slider)
+        self.callbacks[(self.controls_faderport.mqtt_prefix, "col3_slider")] = (self.cb_event_sliders, self.controls_faderport.col3_slider)
+        self.callbacks[(self.controls_faderport.mqtt_prefix, "col4_slider")] = (self.cb_event_sliders, self.controls_faderport.col4_slider)
+        self.callbacks[(self.controls_faderport.mqtt_prefix, "col5_slider")] = (self.cb_event_sliders, self.controls_faderport.col5_slider)
+        self.callbacks[(self.controls_faderport.mqtt_prefix, "col6_slider")] = (self.cb_event_sliders, self.controls_faderport.col6_slider)
+        self.callbacks[(self.controls_faderport.mqtt_prefix, "col7_slider")] = (self.cb_event_sliders, self.controls_faderport.col7_slider)
+        self.callbacks[(self.controls_faderport.mqtt_prefix, "col8_slider")] = (self.cb_event_sliders, self.controls_faderport.col8_slider)
+        # Add 8 encoders
+        self.callbacks[(self.controls_push.mqtt_prefix, "grid_col1_knob")] = (self.cb_event_encoders, self.controls_push.grid_col1_knob)
+        self.callbacks[(self.controls_push.mqtt_prefix, "grid_col2_knob")] = (self.cb_event_encoders, self.controls_push.grid_col2_knob)
+        self.callbacks[(self.controls_push.mqtt_prefix, "grid_col3_knob")] = (self.cb_event_encoders, self.controls_push.grid_col3_knob)
+        self.callbacks[(self.controls_push.mqtt_prefix, "grid_col4_knob")] = (self.cb_event_encoders, self.controls_push.grid_col4_knob)
+        self.callbacks[(self.controls_push.mqtt_prefix, "grid_col5_knob")] = (self.cb_event_encoders, self.controls_push.grid_col5_knob)
+        self.callbacks[(self.controls_push.mqtt_prefix, "grid_col6_knob")] = (self.cb_event_encoders, self.controls_push.grid_col6_knob)
+        self.callbacks[(self.controls_push.mqtt_prefix, "grid_col7_knob")] = (self.cb_event_encoders, self.controls_push.grid_col7_knob)
+        self.callbacks[(self.controls_push.mqtt_prefix, "grid_col8_knob")] = (self.cb_event_encoders, self.controls_push.grid_col8_knob)
+        # Beat tap
+        self.callbacks[(self.controls_push.mqtt_prefix, "left_tap_tempo")] = (self.cb_event_beat_tap, self.controls_push.left_tap_tempo)
+
     def run(self):
         self.mqtt_client = mqtt.Client()
         self.mqtt_client.on_connect = self._mqtt_on_connected
@@ -279,7 +344,7 @@ class LightDesk(threading.Thread):
         self.mqtt_client.connect(host="127.0.0.1")
         self.mqtt_client.loop_start()
         self.osc = SimpleUDPClient(self.osc_ip, self.osc_port)
-        self.add_groups()
+        self.add_controls_and_groups()
         while True:
             if self.quit:
                 self.mqtt_client.loop_stop()
@@ -305,6 +370,12 @@ class LightDesk(threading.Thread):
         control = topics[1]
         event = topics[3]
         event_concat = f"{topics[2]}/{topics[3]}"
+        if (unit, control) in self.callbacks:
+            o = self.callbacks[(unit, control)]
+            callback = o[0]
+            data = o[1]
+            callback(unit=unit, control=control, event=event, data=data)
+        """
         if unit == self.controls_faderport.mqtt_prefix:
             if control in self.controls_faderport.mqtt_topics_out:
                 if event_concat in self.controls_faderport.mqtt_topics_out[control]:
@@ -319,6 +390,7 @@ class LightDesk(threading.Thread):
                     callback = self.controls_push.mqtt_topics_out[control][event_concat][1]
                     # callback(topics, control_object, msg)
                     # print(f"{unit} {control} {event_concat}")
+        """
 
     def _cb_faderport_button_set_light(self, control_object: FaderportButton, value):
         if type(value) is tuple:
