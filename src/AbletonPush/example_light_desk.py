@@ -63,9 +63,12 @@ class ButtonValue:
     def cb_event(self, *args, **kwargs):
         # print(f"cb_event {args} {kwargs}.")
         if kwargs['event'] == 'down':
-            print(kwargs['data'])
+            # print(kwargs['data'])
+            self.selected = True
+            self.light_desk.selected_group = self.group_row.name
         elif kwargs['event'] == 'up':
-            print(kwargs['data'])
+            # print(kwargs['data'])
+            self.selected = False
 
     def __repr__(self):
         out = f"ButtonValue(name='{self.name}'"
@@ -142,6 +145,8 @@ class LightDesk(threading.Thread):
         self.groups = {}
         self.values = []
         self.callbacks = {}
+        self.selected_group = None
+        self.selected_group_previous = None
 
     def cb_event_sliders(self, *args, **kwargs):
         # print(f"cb_event {args} {kwargs}.")
@@ -156,7 +161,25 @@ class LightDesk(threading.Thread):
 
     def cb_event_beat_tap(self, *args, **kwargs):
         if kwargs['event'] == 'down':
-            print(kwargs['data'])
+            self.osc.send_message("/beat_tap", 1)
+        elif kwargs['event'] == 'up':
+            self.osc.send_message("/beat_tap", 0)
+
+    def get_selected_values(self, filter_col: int = None, filter_group: str = None):
+        values_selected = []
+        for group_key, group in self.groups.items():
+            for col_key, col in group.columns.items():
+                for btn_key, btn in col.buttons.items():
+                    if btn.selected:
+                        if filter_col:
+                            if col.column_i == filter_col:
+                                values_selected.append(btn)
+                        elif filter_group:
+                            if group_key == filter_group:
+                                values_selected.append(btn)
+                        else:
+                            values_selected.append(btn)
+        return values_selected
 
     def add_controls_and_groups(self):
         GroupRow(name='A', description="Group A", light_desk=self,
