@@ -13,15 +13,13 @@ from AbletonPush.structure import PushControls
 from AbletonPush.structure import Button as PushButton
 from AbletonPush.structure import TouchBar as PushTouchBar
 from AbletonPush.structure import Display as PushDisplay
+from AbletonPush.helper_functions import try_parse_int, format_float_precision
 
 
-class ButtonValue:
-    def __init__(self, name: str, description: str, light_hue: float, light_saturation: float,
-                 button, light_desk, group_row, group_col):
+class ValueHolder:
+    def __init__(self, name: str, description: str, button, light_desk, group_row, group_col):
         self.name = name
         self.description = description
-        self.light_hue = light_hue
-        self.light_saturation = light_saturation
         self.button = button
         self.light_desk = light_desk
         self.group_row = group_row
@@ -29,12 +27,7 @@ class ButtonValue:
         # Value
         self._value = 0
         self.value_previous = 0
-        self.selected = False
-        self.group_col.buttons[self.name] = self
-        setattr(self.group_col, self.name, self)
         self.light_desk.values.append(self)
-        self.light_desk.callbacks[(self.light_desk.controls_push.mqtt_prefix,
-                                   self.button.name)] = (self.cb_event, self)
 
     @property
     def value(self):
@@ -60,6 +53,26 @@ class ButtonValue:
         if self._value > 65535:
             self._value = 65535
 
+    def __repr__(self):
+        out = f"ValueHolder(name='{self.name}'"
+        out += f", description={self.description}"
+        out += f", group_row={self.group_row}"
+        out += f", group_col={self.group_col}"
+        out += f")"
+        return out
+
+
+class ButtonValue(ValueHolder):
+    def __init__(self, name: str, description: str, light_hue: float, light_saturation: float,
+                 button, light_desk, group_row, group_col):
+        super(ButtonValue, self).__init__(name=name, description=description, button=button,
+                                          light_desk=light_desk, group_row=group_row, group_col=group_col)
+        self.selected = False
+        self.group_col.buttons[self.name] = self
+        setattr(self.group_col, self.name, self)
+        self.light_desk.callbacks[(self.light_desk.controls_push.mqtt_prefix,
+                                   self.button.name)] = (self.cb_event, self)
+
     def cb_event(self, *args, **kwargs):
         # print(f"cb_event {args} {kwargs}.")
         if kwargs['event'] == 'down':
@@ -70,16 +83,8 @@ class ButtonValue:
             # print(kwargs['data'])
             self.selected = False
 
-    def __repr__(self):
-        out = f"ButtonValue(name='{self.name}'"
-        out += f", description={self.description}"
-        out += f", group_row={self.group_row}"
-        out += f", group_col={self.group_col}"
-        out += f")"
-        return out
-
     def osc_send(self):
-        pass
+        self.light_desk.osc.send_message(f"/{self.group_col.name}/{self.name}", self.value_float)
 
 
 class GroupCol:
@@ -157,7 +162,12 @@ class LightDesk(threading.Thread):
 
     def cb_event_encoders(self, *args, **kwargs):
         if kwargs['event'] == 'rotate':
-            print(kwargs['data'])
+            # print(kwargs)
+            selected_values = self.get_selected_values(filter_col=kwargs['data'].midi_rotate - 70)
+            for val in selected_values:
+                enc_value = try_parse_int(kwargs['payload']) * 500
+                val.value += enc_value
+                # print(format_float_precision(val.value_float, 2))
 
     def cb_event_beat_tap(self, *args, **kwargs):
         if kwargs['event'] == 'down':
@@ -397,23 +407,7 @@ class LightDesk(threading.Thread):
             o = self.callbacks[(unit, control)]
             callback = o[0]
             data = o[1]
-            callback(unit=unit, control=control, event=event, data=data)
-        """
-        if unit == self.controls_faderport.mqtt_prefix:
-            if control in self.controls_faderport.mqtt_topics_out:
-                if event_concat in self.controls_faderport.mqtt_topics_out[control]:
-                    control_object = self.controls_faderport.mqtt_topics_out[control][event_concat][0]
-                    callback = self.controls_faderport.mqtt_topics_out[control][event_concat][1]
-                    # callback(topics, control_object, msg)
-                    # print(f"{unit} {control} {event_concat}")
-        elif unit == self.controls_push.mqtt_prefix:
-            if control in self.controls_push.mqtt_topics_out:
-                if event_concat in self.controls_push.mqtt_topics_out[control]:
-                    control_object = self.controls_push.mqtt_topics_out[control][event_concat][0]
-                    callback = self.controls_push.mqtt_topics_out[control][event_concat][1]
-                    # callback(topics, control_object, msg)
-                    # print(f"{unit} {control} {event_concat}")
-        """
+            callback(unit=unit, control=control, event=event, data=data, payload=msg.payload)
 
     def _cb_faderport_button_set_light(self, control_object: FaderportButton, value):
         if type(value) is tuple:
