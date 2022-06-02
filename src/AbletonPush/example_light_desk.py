@@ -67,6 +67,8 @@ class ButtonValue(ValueHolder):
                  button, light_desk, group_row, group_col):
         super(ButtonValue, self).__init__(name=name, description=description, button=button,
                                           light_desk=light_desk, group_row=group_row, group_col=group_col)
+        self.light_saturation = light_saturation
+        self.light_hue = light_hue
         self.selected = False
         self.group_col.buttons[self.name] = self
         setattr(self.group_col, self.name, self)
@@ -164,6 +166,17 @@ class LightDesk(threading.Thread):
         if kwargs['event'] == 'rotate':
             # print(kwargs)
             selected_values = self.get_selected_values(filter_col=kwargs['data'].midi_rotate - 70)
+            # Update only selected values in the same column as the encoder
+            for val in selected_values:
+                enc_value = try_parse_int(kwargs['payload']) * 500
+                val.value += enc_value
+                # print(format_float_precision(val.value_float, 2))
+
+    def cb_event_encoder_all(self, *args, **kwargs):
+        if kwargs['event'] == 'rotate':
+            # print(kwargs)
+            # Update all selected values
+            selected_values = self.get_selected_values()
             for val in selected_values:
                 enc_value = try_parse_int(kwargs['payload']) * 500
                 val.value += enc_value
@@ -363,6 +376,8 @@ class LightDesk(threading.Thread):
         self.callbacks[(self.controls_push.mqtt_prefix, "grid_col6_knob")] = (self.cb_event_encoders, self.controls_push.grid_col6_knob)
         self.callbacks[(self.controls_push.mqtt_prefix, "grid_col7_knob")] = (self.cb_event_encoders, self.controls_push.grid_col7_knob)
         self.callbacks[(self.controls_push.mqtt_prefix, "grid_col8_knob")] = (self.cb_event_encoders, self.controls_push.grid_col8_knob)
+        # Add the right encode to control all
+        self.callbacks[(self.controls_push.mqtt_prefix, "right_knob")] = (self.cb_event_encoder_all, self.controls_push.right_knob)
         # Beat tap
         self.callbacks[(self.controls_push.mqtt_prefix, "left_tap_tempo")] = (self.cb_event_beat_tap, self.controls_push.left_tap_tempo)
 
@@ -382,8 +397,22 @@ class LightDesk(threading.Thread):
             if self.quit:
                 self.mqtt_client.loop_stop()
                 return
-            # self.draw()
+            self.draw()
             sleep(0.020)
+
+    def draw(self):
+        for val in self.values:
+            if val.value != val.value_previous:
+                if type(val) is ButtonValue:
+                    # Update color and stuff
+                    val.osc_send()
+                    # Cut lightness in half to not make white
+                    lightness = val.value_float * 0.5
+                    r, g, b = colorsys.hls_to_rgb(h=val.light_hue, s=val.light_saturation, l=lightness)
+                    val.button.set_light(f"{int(r*255)},{int(g*255)},{int(b*255)}")
+                    # print(f"{val.name} updated to {val.value_float}")
+                # Set previous value to detect change
+                val.value_previous = val.value
 
     def _mqtt_on_connected(self, client, userdata, flags, rc):
         print(f"MQTT Connected with result code {rc}")
