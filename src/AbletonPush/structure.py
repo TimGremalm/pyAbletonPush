@@ -656,7 +656,6 @@ class PushControls:
             self.midi_triggers[btn.channel][btn.midi_id]['note_on'] = (btn, self.callback_unset)
             self.midi_triggers[btn.channel][btn.midi_id]['note_off'] = (btn, self.callback_unset)
             self.midi_triggers[btn.channel][btn.midi_id]['polytouch'] = (btn, self.callback_unset)
-
         # Set object
         setattr(self, btn.name, btn)
         self.elements.append(btn)
@@ -683,7 +682,6 @@ class PushControls:
         self.midi_triggers[touch.channel][touch.midi_touch_note]['note_on'] = (touch, self.callback_unset)
         self.midi_triggers[touch.channel][touch.midi_touch_note]['note_off'] = (touch, self.callback_unset)
         self.midi_triggers[touch.channel][touch.midi_pitch_wheel]['pitchwheel'] = (touch, self.callback_unset)
-
         # Set object
         setattr(self, touch.name, touch)
         self.elements.append(touch)

@@ -66,9 +66,9 @@ class AbletonPush(threading.Thread):
         self.mqtt_client = mqtt.Client()
         self.mqtt_client.on_connect = self._mqtt_on_connected
         self.mqtt_client.on_message = self._mqtt_on_message
+        self.controls = PushControlsMidi2MQTT(ableton_push=self)
         self.mqtt_client.connect(host="127.0.0.1")
         self.mqtt_client.loop_start()
-        self.controls = PushControlsMidi2MQTT(ableton_push=self)
         while True:
             if self.quit:
                 self.mqtt_client.loop_stop()
