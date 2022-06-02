@@ -1,8 +1,9 @@
 import threading
 from time import sleep
+from enum import Enum
 import paho.mqtt.client as mqtt
 from pythonosc.udp_client import SimpleUDPClient
-
+import colorsys
 
 from Faderport.structure import FaderportControls
 from Faderport.structure import Button as FaderportButton
@@ -12,6 +13,82 @@ from AbletonPush.structure import PushControls
 from AbletonPush.structure import Button as PushButton
 from AbletonPush.structure import TouchBar as PushTouchBar
 from AbletonPush.structure import Display as PushDisplay
+
+
+class ButtonState(Enum):
+    Init = 0
+    Down = 1
+    Up = 3
+
+
+class ZValue:
+    def __init__(self, name: str, description: str, light_hue: float, light_saturation: float,
+                 button, light_desk, group_row, group_col):
+        self.name = name
+        self.description = description
+        self.light_hue = light_hue
+        self.light_saturation = light_saturation
+        self.button = button
+        self.light_desk = light_desk
+        self.group_row = group_row
+        self.group_col = group_col
+        # Value
+        self._value = 0
+        self.value_previous = 0
+        self.selected = False
+        self.group_col.buttons[self.name] = self
+        setattr(self.group_col, self.name, self)
+        self.light_desk.values.append(self)
+
+    def __repr__(self):
+        out = f"ZValue(name='{self.name}'"
+        out += f", description={self.description}"
+        out += f", group_row={self.group_row}"
+        out += f", group_col={self.group_col}"
+        out += f")"
+        return out
+
+    def osc_send(self):
+        pass
+
+
+class GroupCol:
+    def __init__(self, name, column_i: int, light_desk, group_row, buttons):
+        self.name = name
+        self.column_i = column_i
+        self.light_desk = light_desk
+        self.group_row = group_row
+        self.group_row.columns[self.name] = self
+        setattr(self.group_row, self.name, self)
+        self.buttons = {}
+        for btn_i, btn in enumerate(buttons):
+            ZValue(name=btn['name'], description=btn['description'], light_hue=btn['hue'], light_saturation=btn['sat'],
+                   button=btn['button'], light_desk=self.light_desk, group_row=self.group_row, group_col=self)
+
+    def __repr__(self):
+        out = f"GroupCol(name='{self.name}'"
+        out += f")"
+        return out
+
+
+class GroupRow:
+    def __init__(self, name: str, description: str, light_desk, cols):
+        self.name = name
+        self.description = description
+        self.light_desk = light_desk
+        self.light_desk.groups[self.name] = self
+        setattr(self.light_desk, self.name, self)
+        self.columns = {}
+        for col_i, col in enumerate(cols):
+            column_i = col_i + 1
+            GroupCol(name=f"{self.name}{column_i}", column_i=column_i,
+                     light_desk=self.light_desk, group_row=self, buttons=col)
+
+    def __repr__(self):
+        out = f"GroupRow(name='{self.name}'"
+        out += f", description={self.description}"
+        out += f")"
+        return out
 
 
 class LightDesk(threading.Thread):
@@ -34,7 +111,163 @@ class LightDesk(threading.Thread):
         self.controls_faderport = None
         self.controls_push = None
         self.osc = None
+        self.groups = {}
+        self.values = []
 
+    def add_groups(self):
+        GroupRow(name='A', description="Group A", light_desk=self,
+                 cols=[[{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col1_rowt2},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_push.grid_col1_row1},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.2, 'sat': 1.0,
+                         'button': self.controls_push.grid_col1_row2}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col2_rowt2},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_push.grid_col2_row1},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.2, 'sat': 1.0,
+                         'button': self.controls_push.grid_col2_row2}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col3_rowt2},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_push.grid_col3_row1},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.2, 'sat': 1.0,
+                         'button': self.controls_push.grid_col3_row2}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col4_rowt2},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_push.grid_col4_row1},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.2, 'sat': 1.0,
+                         'button': self.controls_push.grid_col4_row2}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col5_rowt2},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_push.grid_col5_row1},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.2, 'sat': 1.0,
+                         'button': self.controls_push.grid_col5_row2}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col6_rowt2},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_push.grid_col6_row1},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.2, 'sat': 1.0,
+                         'button': self.controls_push.grid_col6_row2}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col7_rowt2},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_push.grid_col7_row1},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.2, 'sat': 1.0,
+                         'button': self.controls_push.grid_col7_row2}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col8_rowt2},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_push.grid_col8_row1},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.2, 'sat': 1.0,
+                         'button': self.controls_push.grid_col8_row2}],
+                       ]
+                 )
+        GroupRow(name='B', description="Group B", light_desk=self,
+                 cols=[[{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.3, 'sat': 1.0,
+                         'button': self.controls_push.grid_col1_row3},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.4, 'sat': 1.0,
+                         'button': self.controls_push.grid_col1_row4},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.5, 'sat': 1.0,
+                         'button': self.controls_push.grid_col1_row5}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.3, 'sat': 1.0,
+                         'button': self.controls_push.grid_col2_row3},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.4, 'sat': 1.0,
+                         'button': self.controls_push.grid_col2_row4},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.5, 'sat': 1.0,
+                         'button': self.controls_push.grid_col2_row5}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.3, 'sat': 1.0,
+                         'button': self.controls_push.grid_col3_row3},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.4, 'sat': 1.0,
+                         'button': self.controls_push.grid_col3_row4},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.5, 'sat': 1.0,
+                         'button': self.controls_push.grid_col3_row5}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.3, 'sat': 1.0,
+                         'button': self.controls_push.grid_col4_row3},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.4, 'sat': 1.0,
+                         'button': self.controls_push.grid_col4_row4},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.5, 'sat': 1.0,
+                         'button': self.controls_push.grid_col4_row5}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.3, 'sat': 1.0,
+                         'button': self.controls_push.grid_col5_row3},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.4, 'sat': 1.0,
+                         'button': self.controls_push.grid_col5_row4},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.5, 'sat': 1.0,
+                         'button': self.controls_push.grid_col5_row5}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.3, 'sat': 1.0,
+                         'button': self.controls_push.grid_col6_row3},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.4, 'sat': 1.0,
+                         'button': self.controls_push.grid_col6_row4},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.5, 'sat': 1.0,
+                         'button': self.controls_push.grid_col6_row5}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.3, 'sat': 1.0,
+                         'button': self.controls_push.grid_col7_row3},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.4, 'sat': 1.0,
+                         'button': self.controls_push.grid_col7_row4},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.5, 'sat': 1.0,
+                         'button': self.controls_push.grid_col7_row5}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.3, 'sat': 1.0,
+                         'button': self.controls_push.grid_col8_row3},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.4, 'sat': 1.0,
+                         'button': self.controls_push.grid_col8_row4},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.5, 'sat': 1.0,
+                         'button': self.controls_push.grid_col8_row5}],
+                       ]
+                 )
+        GroupRow(name='C', description="Group C", light_desk=self,
+                 cols=[[{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                         'button': self.controls_push.grid_col1_row6},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                         'button': self.controls_push.grid_col1_row7},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                         'button': self.controls_push.grid_col1_row8}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                         'button': self.controls_push.grid_col2_row6},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                         'button': self.controls_push.grid_col2_row7},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                         'button': self.controls_push.grid_col2_row8}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                         'button': self.controls_push.grid_col3_row6},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                         'button': self.controls_push.grid_col3_row7},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                         'button': self.controls_push.grid_col3_row8}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                         'button': self.controls_push.grid_col4_row6},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                         'button': self.controls_push.grid_col4_row7},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                         'button': self.controls_push.grid_col4_row8}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                         'button': self.controls_push.grid_col5_row6},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                         'button': self.controls_push.grid_col5_row7},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                         'button': self.controls_push.grid_col5_row8}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                         'button': self.controls_push.grid_col6_row6},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                         'button': self.controls_push.grid_col6_row7},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                         'button': self.controls_push.grid_col6_row8}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                         'button': self.controls_push.grid_col7_row6},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                         'button': self.controls_push.grid_col7_row7},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                         'button': self.controls_push.grid_col7_row8}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                         'button': self.controls_push.grid_col8_row6},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                         'button': self.controls_push.grid_col8_row7},
+                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                         'button': self.controls_push.grid_col8_row8}],
+                       ]
+                 )
     def run(self):
         self.mqtt_client = mqtt.Client()
         self.mqtt_client.on_connect = self._mqtt_on_connected
@@ -46,11 +279,13 @@ class LightDesk(threading.Thread):
         self.mqtt_client.connect(host="127.0.0.1")
         self.mqtt_client.loop_start()
         self.osc = SimpleUDPClient(self.osc_ip, self.osc_port)
+        self.add_groups()
         while True:
             if self.quit:
                 self.mqtt_client.loop_stop()
                 return
-            sleep(0.001)
+            # self.draw()
+            sleep(0.020)
 
     def _mqtt_on_connected(self, client, userdata, flags, rc):
         print(f"MQTT Connected with result code {rc}")
@@ -110,7 +345,7 @@ class LightDesk(threading.Thread):
             payload = f"{value[0]},{value[1]},{value[2]}"
         else:
             payload = f"{value}"
-        topic = f"{self.controls_push.mqtt_prefix}/{control_object.name}/set_light_mode"
+        topic = f"{self.controls_push.mqtt_prefix}/{control_object.name}/set_light"
         self.mqtt_client.publish(topic=topic, payload=payload)
 
     def _cb_push_touch_bar_set_light_mode(self, value):
