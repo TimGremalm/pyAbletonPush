@@ -479,8 +479,8 @@ class LightDesk(threading.Thread):
         self.controls_push.display.clear_text()
         self.controls_push.display.set_text("Light Table OSC", row=1)
         self.controls_push.display.set_text("Select a group to get started.", row=2)
-        self.controls_push.display.set_text("https://github.com/TimGremalm/pyAbletonPush", row=3)
-        self.controls_push.display.set_text("https://github.com/TimGremalm/pyFaderport", row=4)
+        self.controls_push.display.set_text("    https://github.com/TimGremalm/pyAbletonPush", row=3)
+        self.controls_push.display.set_text("    https://github.com/TimGremalm/pyFaderport", row=4)
         self.controls_faderport.col1_select.set_light(2)
         self.controls_faderport.col2_select.set_light(2)
         self.controls_faderport.col3_select.set_light(2)
@@ -547,7 +547,7 @@ class LightDesk(threading.Thread):
             for col_key, col in group.columns.items():
                 slider = col.buttons['Sli4']
                 # Convert to 14-bit value from 16
-                downshifted = (slider.value >> 2) - ((2**13)-1)
+                downshifted = (slider.value >> 2) - ((2**13)-0)
                 slider.button.set_pitch(downshifted)
             # Scroll touch strip to selected position
             if self.selected_group == 'A':
