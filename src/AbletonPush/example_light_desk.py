@@ -57,6 +57,11 @@ class ValueHolder:
         if self._value > 65535:
             self._value = 65535
 
+    def get_text(self):
+        shifted_value = self.value >> 8
+        out = f"{self.name:4} {shifted_value:03}"
+        return out
+
     def osc_send(self):
         self.light_desk.osc.send_message(f"/{self.group_col.name}/{self.name}", self.value_float)
 
@@ -169,7 +174,7 @@ class LightDesk(threading.Thread):
             slider = kwargs['data']
             slider_value = try_parse_int(kwargs['payload']) + 8192
             slider_value_float = slider_value / (2**14-1)
-            column_i = slider.pitchwheel_channel
+            column_i = slider.pitchwheel_channel + 1
             # print(slider_value)
             # Change values in corresponding selected column
             if self.selected_group:
@@ -472,6 +477,10 @@ class LightDesk(threading.Thread):
 
         # Init Display and colors
         self.controls_push.display.clear_text()
+        self.controls_push.display.set_text("Light Table OSC", row=1)
+        self.controls_push.display.set_text("Select a group to get started.", row=2)
+        self.controls_push.display.set_text("https://github.com/TimGremalm/pyAbletonPush", row=3)
+        self.controls_push.display.set_text("https://github.com/TimGremalm/pyFaderport", row=4)
         self.controls_faderport.col1_select.set_light(2)
         self.controls_faderport.col2_select.set_light(2)
         self.controls_faderport.col3_select.set_light(2)
@@ -498,9 +507,11 @@ class LightDesk(threading.Thread):
                 self.mqtt_client.loop_stop()
                 return
             self.draw()
+            # Cap to 50 FPS
             sleep(0.020)
 
     def draw(self):
+        # Take care of updated values
         for val in self.values:
             if val.value != val.value_previous:
                 if type(val) is ButtonValue:
@@ -529,6 +540,32 @@ class LightDesk(threading.Thread):
                     val.osc_send()
                 # Set previous value to detect change
                 val.value_previous = val.value
+        # Check if selected group is changed
+        if self.selected_group != self.selected_group_previous:
+            # Set sliders
+            group = self.groups[self.selected_group]
+            for col_key, col in group.columns.items():
+                slider = col.buttons['Sli4']
+                # Convert to 14-bit value from 16
+                downshifted = (slider.value >> 2) - ((2**13)-1)
+                slider.button.set_pitch(downshifted)
+            # Clear display if selecting group for first time
+            if self.selected_group_previous is None:
+                self.controls_push.display.clear_text()
+            # Set previous value to detect change
+            self.selected_group_previous = self.selected_group
+        # Update display
+        if self.selected_group:
+            group = self.groups[self.selected_group]
+            self.controls_push.display.set_text(f"{group.name} {group.description}", row=1)
+            for col_key, col in group.columns.items():
+                max_buttons = len(col.buttons)
+                if max_buttons > 3:
+                    max_buttons = 3
+                keys = list(col.buttons.keys())
+                for i in range(0, max_buttons):
+                    val = col.buttons[keys[i]]
+                    self.controls_push.display.set_text(f"{val.get_text()}", row=i+2, col=col.column_i)
 
     def _mqtt_on_connected(self, client, userdata, flags, rc):
         print(f"MQTT Connected with result code {rc}")
