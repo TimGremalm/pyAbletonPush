@@ -549,6 +549,15 @@ class LightDesk(threading.Thread):
                 # Convert to 14-bit value from 16
                 downshifted = (slider.value >> 2) - ((2**13)-1)
                 slider.button.set_pitch(downshifted)
+            # Scroll touch strip to selected position
+            if self.selected_group == 'A':
+                self.controls_push.touch_bar.set_light_array(9*[0] + 9*[0] + 6*[3])
+            elif self.selected_group == 'B':
+                self.controls_push.touch_bar.set_light_array(9*[0] + 9*[3] + 6*[0])
+            elif self.selected_group == 'C':
+                self.controls_push.touch_bar.set_light_array(9*[3] + 9*[0] + 6*[0])
+            else:
+                self.controls_push.touch_bar.set_light_array(24*[0])
             # Clear display if selecting group for first time
             if self.selected_group_previous is None:
                 self.controls_push.display.clear_text()
