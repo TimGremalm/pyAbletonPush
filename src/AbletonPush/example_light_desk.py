@@ -8,12 +8,15 @@ import colorsys
 from Faderport.structure import FaderportControls
 from Faderport.structure import Button as FaderportButton
 from Faderport.structure import PitchWheel as FaderportPitchWheel
+from Faderport.constants import LightTypes as FaderportLightTypes
 
 from AbletonPush.structure import PushControls
 from AbletonPush.structure import Button as PushButton
 from AbletonPush.structure import TouchBar as PushTouchBar
 from AbletonPush.structure import Display as PushDisplay
 from AbletonPush.helper_functions import try_parse_int, format_float_precision
+from AbletonPush.constants import LightTypes as PushLightTypes
+from AbletonPush.constants import ColorsRedYellow as PushColorsRedYellow
 
 
 class ValueHolder:
@@ -24,6 +27,7 @@ class ValueHolder:
         self.light_desk = light_desk
         self.group_row = group_row
         self.group_col = group_col
+        self.selected = False
         # Value
         self._value = 0
         self.value_previous = 0
@@ -53,6 +57,9 @@ class ValueHolder:
         if self._value > 65535:
             self._value = 65535
 
+    def osc_send(self):
+        self.light_desk.osc.send_message(f"/{self.group_col.name}/{self.name}", self.value_float)
+
     def __repr__(self):
         out = f"ValueHolder(name='{self.name}'"
         out += f", description={self.description}"
@@ -69,11 +76,15 @@ class ButtonValue(ValueHolder):
                                           light_desk=light_desk, group_row=group_row, group_col=group_col)
         self.light_saturation = light_saturation
         self.light_hue = light_hue
-        self.selected = False
         self.group_col.buttons[self.name] = self
+        if button.luminance_type in list(PushLightTypes):
+            self.mqtt_prefix = self.light_desk.controls_push.mqtt_prefix
+        elif button.luminance_type in list(FaderportLightTypes):
+            self.mqtt_prefix = self.light_desk.controls_faderport.mqtt_prefix
+        else:
+            self.mqtt_prefix = "unknown"
         setattr(self.group_col, self.name, self)
-        self.light_desk.callbacks[(self.light_desk.controls_push.mqtt_prefix,
-                                   self.button.name)] = (self.cb_event, self)
+        self.light_desk.callbacks[(self.mqtt_prefix, self.button.name)] = (self.cb_event, self)
 
     def cb_event(self, *args, **kwargs):
         # print(f"cb_event {args} {kwargs}.")
@@ -84,9 +95,6 @@ class ButtonValue(ValueHolder):
         elif kwargs['event'] == 'up':
             # print(kwargs['data'])
             self.selected = False
-
-    def osc_send(self):
-        self.light_desk.osc.send_message(f"/{self.group_col.name}/{self.name}", self.value_float)
 
 
 class GroupCol:
@@ -157,10 +165,18 @@ class LightDesk(threading.Thread):
 
     def cb_event_sliders(self, *args, **kwargs):
         # print(f"cb_event {args} {kwargs}.")
-        if kwargs['event'] == 'touch':
-            print(kwargs['data'])
-        elif kwargs['event'] == 'release':
-            print(kwargs['data'])
+        if kwargs['event'] == 'pitch':
+            slider = kwargs['data']
+            slider_value = try_parse_int(kwargs['payload']) + 8192
+            slider_value_float = slider_value / (2**14-1)
+            column_i = slider.pitchwheel_channel
+            # print(slider_value)
+            # Change values in corresponding selected column
+            if self.selected_group:
+                group = self.groups[self.selected_group]
+                col = group.columns[f"{self.selected_group}{column_i}"]
+                val = col.buttons['Sli4']
+                val.value_float = slider_value_float
 
     def cb_event_encoders(self, *args, **kwargs):
         if kwargs['event'] == 'rotate':
@@ -205,6 +221,41 @@ class LightDesk(threading.Thread):
         return values_selected
 
     def add_controls_and_groups(self):
+        GroupRow(name='T', description="Group T", light_desk=self,
+                 cols=[[{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col1_rowt1},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_faderport.col1_select}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col2_rowt1},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_faderport.col2_select}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col3_rowt1},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_faderport.col3_select}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col4_rowt1},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_faderport.col4_select}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col5_rowt1},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_faderport.col5_select}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col6_rowt1},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_faderport.col6_select}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col7_rowt1},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_faderport.col7_select}],
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
+                         'button': self.controls_push.grid_col8_rowt1},
+                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
+                         'button': self.controls_faderport.col8_select}],
+                       ]
+                 )
         GroupRow(name='A', description="Group A", light_desk=self,
                  cols=[[{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
                          'button': self.controls_push.grid_col1_rowt2},
@@ -381,6 +432,55 @@ class LightDesk(threading.Thread):
         # Beat tap
         self.callbacks[(self.controls_push.mqtt_prefix, "left_tap_tempo")] = (self.cb_event_beat_tap, self.controls_push.left_tap_tempo)
 
+        # Add slider values for all groups
+        for group_key, group in self.groups.items():
+            for col_key, col in group.columns.items():
+                slider_name = 'Sli4'
+                if col.column_i == 1:
+                    col.buttons[slider_name] = ValueHolder(name=slider_name, description="Faderport Slider",
+                                                           button=self.controls_faderport.col1_slider,
+                                                           light_desk=self, group_row=group, group_col=col)
+                elif col.column_i == 2:
+                    col.buttons[slider_name] = ValueHolder(name=slider_name, description="Faderport Slider",
+                                                           button=self.controls_faderport.col2_slider,
+                                                           light_desk=self, group_row=group, group_col=col)
+                elif col.column_i == 3:
+                    col.buttons[slider_name] = ValueHolder(name=slider_name, description="Faderport Slider",
+                                                           button=self.controls_faderport.col3_slider,
+                                                           light_desk=self, group_row=group, group_col=col)
+                elif col.column_i == 4:
+                    col.buttons[slider_name] = ValueHolder(name=slider_name, description="Faderport Slider",
+                                                           button=self.controls_faderport.col4_slider,
+                                                           light_desk=self, group_row=group, group_col=col)
+                elif col.column_i == 5:
+                    col.buttons[slider_name] = ValueHolder(name=slider_name, description="Faderport Slider",
+                                                           button=self.controls_faderport.col5_slider,
+                                                           light_desk=self, group_row=group, group_col=col)
+                elif col.column_i == 6:
+                    col.buttons[slider_name] = ValueHolder(name=slider_name, description="Faderport Slider",
+                                                           button=self.controls_faderport.col6_slider,
+                                                           light_desk=self, group_row=group, group_col=col)
+                elif col.column_i == 7:
+                    col.buttons[slider_name] = ValueHolder(name=slider_name, description="Faderport Slider",
+                                                           button=self.controls_faderport.col7_slider,
+                                                           light_desk=self, group_row=group, group_col=col)
+                elif col.column_i == 8:
+                    col.buttons[slider_name] = ValueHolder(name=slider_name, description="Faderport Slider",
+                                                           button=self.controls_faderport.col8_slider,
+                                                           light_desk=self, group_row=group, group_col=col)
+                setattr(col, slider_name, col.buttons[slider_name])
+
+        # Init Display and colors
+        self.controls_push.display.clear_text()
+        self.controls_faderport.col1_select.set_light(2)
+        self.controls_faderport.col2_select.set_light(2)
+        self.controls_faderport.col3_select.set_light(2)
+        self.controls_faderport.col4_select.set_light(2)
+        self.controls_faderport.col5_select.set_light(2)
+        self.controls_faderport.col6_select.set_light(2)
+        self.controls_faderport.col7_select.set_light(2)
+        self.controls_faderport.col8_select.set_light(2)
+
     def run(self):
         self.mqtt_client = mqtt.Client()
         self.mqtt_client.on_connect = self._mqtt_on_connected
@@ -406,11 +506,27 @@ class LightDesk(threading.Thread):
                 if type(val) is ButtonValue:
                     # Update color and stuff
                     val.osc_send()
-                    # Cut lightness in half to not make white
-                    lightness = val.value_float * 0.5
-                    r, g, b = colorsys.hls_to_rgb(h=val.light_hue, s=val.light_saturation, l=lightness)
-                    val.button.set_light(f"{int(r*255)},{int(g*255)},{int(b*255)}")
+                    # Check if RGB-mode is available
+                    if val.button.luminance_type is PushLightTypes.RGB or val.button.luminance_type is FaderportLightTypes.RGB:
+                        # Cut lightness in half to not make white
+                        lightness = val.value_float * 0.5
+                        r, g, b = colorsys.hls_to_rgb(h=val.light_hue, s=val.light_saturation, l=lightness)
+                        val.button.set_light(f"{int(r*255)},{int(g*255)},{int(b*255)}")
+                    elif val.button.luminance_type is PushLightTypes.RedYellow:
+                        nice_colors = [PushColorsRedYellow.Black.value,
+                                       PushColorsRedYellow.RedDim.value,
+                                       PushColorsRedYellow.YellowDim.value,
+                                       PushColorsRedYellow.LimeDim.value,
+                                       PushColorsRedYellow.GreenDim.value,
+                                       PushColorsRedYellow.GreenLit.value,
+                                       PushColorsRedYellow.LimeLit.value,
+                                       PushColorsRedYellow.YellowLit.value,
+                                       PushColorsRedYellow.RedLit.value]
+                        color = int(val.value_float * (len(nice_colors)-1))
+                        val.button.set_light(f"{nice_colors[color]}")
                     # print(f"{val.name} updated to {val.value_float}")
+                if type(val) is ValueHolder:
+                    val.osc_send()
                 # Set previous value to detect change
                 val.value_previous = val.value
 
