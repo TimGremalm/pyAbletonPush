@@ -1,3 +1,4 @@
+import platform
 import threading
 from time import sleep
 import re
@@ -11,7 +12,10 @@ from AbletonPush.structure import Button, PushControlsMidi2MQTT
 
 
 class AbletonPush(threading.Thread):
-    def __init__(self, port_user: str = "", port_live: str = "", print_midi: bool = False, test_mode: bool = False):
+    def __init__(self,
+                 port_user_in: str = "", port_user_out: str = "",
+                 port_live_in: str = "", port_live_out: str = "",
+                 print_midi: bool = False, test_mode: bool = False):
         """
         Init a AbletonPush object and prepare MIDI-connections.
         :type test_mode: Test-mode write control-values back so buttons light up.
@@ -28,13 +32,24 @@ class AbletonPush(threading.Thread):
         self.test_mode = test_mode
 
         # Find port names
-        self._ports_midi = mido.get_ioport_names()
-        self.port_user = self._find_port(port_user, "Push.*User")
-        self.port_live = self._find_port(port_live, "Push.*Live")
+        self._ports_midi_in = mido.get_input_names()
+        self._ports_midi_out = mido.get_output_names()
+        if platform.system() == "Windows":
+            self.port_user_in = self._find_port(port_user_in, "Push.*2", direction_in=True)
+            self.port_user_out = self._find_port(port_user_out, "Push.*3", direction_in=False)
+            self.port_live_in = self._find_port(port_live_in, "Push.*1", direction_in=True)
+            self.port_live_out = self._find_port(port_live_out, "Push.*2", direction_in=False)
+        else:
+            self.port_user_in = self._find_port(port_user_in, "Push.*User", direction_in=True)
+            self.port_user_out = self._find_port(port_user_out, "Push.*User", direction_in=False)
+            self.port_live_in = self._find_port(port_live_in, "Push.*Live", direction_in=True)
+            self.port_live_out = self._find_port(port_live_out, "Push.*Live", direction_in=False)
 
         # Instantiate variables
-        self.midi_user = None
-        self.midi_live = None
+        self.midi_user_in = None
+        self.midi_user_out = None
+        self.midi_live_in = None
+        self.midi_live_out = None
         self.mqtt_client = None
         self.controls = None
         threading.Thread.__init__(self)
@@ -61,8 +76,10 @@ class AbletonPush(threading.Thread):
                     callback(control_object, msg)
 
     def run(self):
-        self.midi_user = mido.open_ioport(self.port_user)
-        self.midi_live = mido.open_ioport(self.port_live)
+        self.midi_user_in = mido.open_input(self.port_user_in)
+        self.midi_user_out = mido.open_output(self.port_user_out)
+        self.midi_live_in = mido.open_input(self.port_live_in)
+        self.midi_live_out = mido.open_output(self.port_live_out)
         self.mqtt_client = mqtt.Client()
         self.mqtt_client.on_connect = self._mqtt_on_connected
         self.mqtt_client.on_message = self._mqtt_on_message
@@ -73,7 +90,7 @@ class AbletonPush(threading.Thread):
             if self.quit:
                 self.mqtt_client.loop_stop()
                 return
-            msg = self.midi_user.receive(False)
+            msg = self.midi_user_in.receive(False)
             if msg:
                 if self.test_mode:
                     if msg.type == 'note_on':
@@ -88,7 +105,7 @@ class AbletonPush(threading.Thread):
                 if self.print_midi:
                     print(f"User {msg}")
                 self.midi_parse(msg)
-            msg = self.midi_live.receive(False)
+            msg = self.midi_live_in.receive(False)
             if msg:
                 if self.print_midi:
                     print(f"Live {msg}")
@@ -112,8 +129,10 @@ class AbletonPush(threading.Thread):
 
     def __repr__(self):
         out = f"AbletonPush"
-        out += f"\n\t{self.midi_user}"
-        out += f"\n\t{self.midi_live}"
+        out += f"\n\t{self.midi_user_in}"
+        out += f"\n\t{self.midi_user_out}"
+        out += f"\n\t{self.midi_live_in}"
+        out += f"\n\t{self.midi_live_out}"
         return out
 
     def button_set_color(self, button: Button, color_to_set):
@@ -134,7 +153,7 @@ class AbletonPush(threading.Thread):
         :param value: int Value 0-127
         """
         m = mido.Message('control_change', channel=channel, control=control, value=value)
-        self.midi_user.send(m)
+        self.midi_user_out.send(m)
 
     def _send_note_on(self, channel: int, note: int, velocity: int):
         """
@@ -144,7 +163,7 @@ class AbletonPush(threading.Thread):
         :param velocity: int Velocity 0-127
         """
         m = mido.Message('note_on', channel=channel, note=note, velocity=velocity)
-        self.midi_user.send(m)
+        self.midi_user_out.send(m)
 
     def _send_push_sysex(self, d: list):
         """
@@ -154,7 +173,7 @@ class AbletonPush(threading.Thread):
         m = mido.Message('sysex')
         # Prefix Manufacturer and Product ID before the message. Mido will prefix sysex-command (240) and suffix (247).
         m.data = SYSEX_PREFIX_PUSH + d
-        self.midi_live.send(m)
+        self.midi_live_out.send(m)
 
     def _set_user_mode(self, user=True):
         """
@@ -335,7 +354,7 @@ class AbletonPush(threading.Thread):
         d = command + length + led_bytes
         self._send_push_sysex(d)
 
-    def _find_port(self, port_name: str, fallback: str) -> str:
+    def _find_port(self, port_name: str, fallback: str, direction_in: bool = True) -> str:
         if port_name:
             port_name_to_search = port_name
         else:
@@ -345,12 +364,18 @@ class AbletonPush(threading.Thread):
         if not port_name_to_search.endswith(".*"):
             port_name_to_search += ".*"
         r = re.compile(port_name_to_search, re.IGNORECASE)
-        port_matches = list(filter(r.match, self._ports_midi))
+        if direction_in:
+            port_matches = list(filter(r.match, self._ports_midi_in))
+        else:
+            port_matches = list(filter(r.match, self._ports_midi_out))
         found_port = next(iter(port_matches), None)
         if found_port:
             return found_port
         else:
-            raise Exception(f"Couldn't find {port_name} in listed IO-ports {self._ports_midi}.")
+            if direction_in:
+                raise Exception(f"Couldn't find {port_name} in listed in-ports {self._ports_midi_in}.")
+            else:
+                raise Exception(f"Couldn't find {port_name} in listed out-ports {self._ports_midi_out}.")
 
 
 if __name__ == '__main__':
@@ -360,13 +385,21 @@ if __name__ == '__main__':
     parser.add_argument('--printmidi', '-p',
                         action='store_true',
                         help="Shows MIDI-messages in the console.")
-    parser.add_argument('--midiportuser', "--user",
+    parser.add_argument('--midiportuserin', "--userin",
                         type=str, default="",
-                        help="Set MIDI IO-port for Ableton Push Port User. "
+                        help="Set MIDI in-port for Ableton Push Port User. "
                              "Default: Ableton Push:Ableton Push User Port 28:1")
-    parser.add_argument('--midiportlive', "--live",
+    parser.add_argument('--midiportuserout', "--userout",
                         type=str, default="",
-                        help="Set MIDI IO-port for Ableton Push Port Live. "
+                        help="Set MIDI out-port for Ableton Push Port User. "
+                             "Default: Ableton Push:Ableton Push User Port 28:1")
+    parser.add_argument('--midiportlivein', "--livein",
+                        type=str, default="",
+                        help="Set MIDI in-port for Ableton Push Port Live. "
+                             "Default: Ableton Push:Ableton Push Live Port 28:0")
+    parser.add_argument('--midiportliveout', "--liveout",
+                        type=str, default="",
+                        help="Set MIDI out-port for Ableton Push Port Live. "
                              "Default: Ableton Push:Ableton Push Live Port 28:0")
     parser.add_argument('--shell', '-s',
                         action='store_true',
@@ -383,15 +416,21 @@ if __name__ == '__main__':
     title_long = "Ableton Push MIDI to MQTT"
     print(title_long)
     if args.printports:
-        print("MIDI IO ports:")
-        io_ports = mido.get_ioport_names()
-        for port in io_ports:
+        print("MIDI In ports:")
+        ports_input = mido.get_input_names()
+        for port in ports_input:
+            print(f"\t{port}")
+        print("MIDI Out ports:")
+        ports_output = mido.get_output_names()
+        for port in ports_output:
             print(f"\t{port}")
         print("exit...")
     else:
         ableton_push = AbletonPush(print_midi=args.printmidi,
-                                   port_live=args.midiportlive,
-                                   port_user=args.midiportuser,
+                                   port_live_in=args.midiportlivein,
+                                   port_live_out=args.midiportliveout,
+                                   port_user_in=args.midiportuserin,
+                                   port_user_out=args.midiportuserout,
                                    test_mode=args.test)
         ableton_push.start()
         if args.shell:
