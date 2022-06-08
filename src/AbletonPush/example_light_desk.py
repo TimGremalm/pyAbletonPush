@@ -1,5 +1,5 @@
 import threading
-from time import sleep
+from time import sleep, time
 from enum import Enum
 import paho.mqtt.client as mqtt
 from pythonosc.udp_client import SimpleUDPClient
@@ -14,7 +14,7 @@ from AbletonPush.structure import PushControls
 from AbletonPush.structure import Button as PushButton
 from AbletonPush.structure import TouchBar as PushTouchBar
 from AbletonPush.structure import Display as PushDisplay
-from AbletonPush.helper_functions import try_parse_int, format_float_precision
+from AbletonPush.helper_functions import try_parse_int, format_float_precision, translate
 from AbletonPush.constants import LightTypes as PushLightTypes
 from AbletonPush.constants import ColorsRedYellow as PushColorsRedYellow
 
@@ -167,6 +167,7 @@ class LightDesk(threading.Thread):
         self.callbacks = {}
         self.selected_group = None
         self.selected_group_previous = None
+        self.pushed_row_previous = []
 
     def cb_event_sliders(self, *args, **kwargs):
         # print(f"cb_event {args} {kwargs}.")
@@ -225,6 +226,13 @@ class LightDesk(threading.Thread):
                             values_selected.append(btn)
         return values_selected
 
+    def get_pushed_rows(self):
+        pushed_rows = []
+        for val in self.get_selected_values():
+            if val.group_row not in pushed_rows:
+                pushed_rows.append(val.group_row)
+        return pushed_rows
+
     def add_controls_and_groups(self):
         GroupRow(name='T', description="Group T", light_desk=self,
                  cols=[[{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
@@ -261,7 +269,7 @@ class LightDesk(threading.Thread):
                          'button': self.controls_faderport.col8_select}],
                        ]
                  )
-        GroupRow(name='A', description="Group A", light_desk=self,
+        GroupRow(name='A', description="Group A  ", light_desk=self,
                  cols=[[{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 1.0,
                          'button': self.controls_push.grid_col1_rowt2},
                         {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.1, 'sat': 1.0,
@@ -312,7 +320,7 @@ class LightDesk(threading.Thread):
                          'button': self.controls_push.grid_col8_row2}],
                        ]
                  )
-        GroupRow(name='B', description="Group B", light_desk=self,
+        GroupRow(name='B', description="Floor   ", light_desk=self,
                  cols=[[{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.3, 'sat': 1.0,
                          'button': self.controls_push.grid_col1_row3},
                         {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.4, 'sat': 1.0,
@@ -363,54 +371,54 @@ class LightDesk(threading.Thread):
                          'button': self.controls_push.grid_col8_row5}],
                        ]
                  )
-        GroupRow(name='C', description="Group C", light_desk=self,
-                 cols=[[{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+        GroupRow(name='C', description="Skog    ", light_desk=self,
+                 cols=[[{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 0.0,
                          'button': self.controls_push.grid_col1_row6},
                         {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
                          'button': self.controls_push.grid_col1_row7},
-                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                        {'name': 'RnR2', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
                          'button': self.controls_push.grid_col1_row8}],
-                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 0.0,
                          'button': self.controls_push.grid_col2_row6},
-                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                        {'name': 'RndA', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
                          'button': self.controls_push.grid_col2_row7},
-                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                        {'name': 'RnR1', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
                          'button': self.controls_push.grid_col2_row8}],
-                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.0, 'sat': 0.0,
                          'button': self.controls_push.grid_col3_row6},
-                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                        {'name': 'RndB', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
                          'button': self.controls_push.grid_col3_row7},
-                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                        {'name': 'RnB2', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
                          'button': self.controls_push.grid_col3_row8}],
-                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 0.0,
                          'button': self.controls_push.grid_col4_row6},
-                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                        {'name': 'Red ', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
                          'button': self.controls_push.grid_col4_row7},
-                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                        {'name': 'RnB1', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
                          'button': self.controls_push.grid_col4_row8}],
-                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 0.0,
                          'button': self.controls_push.grid_col5_row6},
-                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                        {'name': 'Grn ', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
                          'button': self.controls_push.grid_col5_row7},
-                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                        {'name': 'HlB2', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
                          'button': self.controls_push.grid_col5_row8}],
-                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 0.0,
                          'button': self.controls_push.grid_col6_row6},
-                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                        {'name': 'Blu ', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
                          'button': self.controls_push.grid_col6_row7},
-                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                        {'name': 'HlB1', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
                          'button': self.controls_push.grid_col6_row8}],
-                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 0.0,
                          'button': self.controls_push.grid_col7_row6},
-                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                        {'name': 'Rain', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
                          'button': self.controls_push.grid_col7_row7},
-                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                        {'name': 'OdB2', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
                          'button': self.controls_push.grid_col7_row8}],
-                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 1.0,
+                       [{'name': 'Val1', 'description': 'Do something Val1', 'hue': 0.6, 'sat': 0.0,
                          'button': self.controls_push.grid_col8_row6},
-                        {'name': 'Val2', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
+                        {'name': 'Abst', 'description': 'Do something Val2', 'hue': 0.7, 'sat': 1.0,
                          'button': self.controls_push.grid_col8_row7},
-                        {'name': 'Val3', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
+                        {'name': 'OdB1', 'description': 'Do something Val3', 'hue': 0.8, 'sat': 1.0,
                          'button': self.controls_push.grid_col8_row8}],
                        ]
                  )
@@ -514,32 +522,8 @@ class LightDesk(threading.Thread):
         # Take care of updated values
         for val in self.values:
             if val.value != val.value_previous:
-                if type(val) is ButtonValue:
-                    # Update color and stuff
-                    val.osc_send()
-                    # Check if RGB-mode is available
-                    if val.button.luminance_type is PushLightTypes.RGB or val.button.luminance_type is FaderportLightTypes.RGB:
-                        # Cut lightness in half to not make white
-                        lightness = val.value_float * 0.5
-                        r, g, b = colorsys.hls_to_rgb(h=val.light_hue, s=val.light_saturation, l=lightness)
-                        val.button.set_light(f"{int(r*255)},{int(g*255)},{int(b*255)}")
-                    elif val.button.luminance_type is PushLightTypes.RedYellow:
-                        nice_colors = [PushColorsRedYellow.Black.value,
-                                       PushColorsRedYellow.RedDim.value,
-                                       PushColorsRedYellow.YellowDim.value,
-                                       PushColorsRedYellow.LimeDim.value,
-                                       PushColorsRedYellow.GreenDim.value,
-                                       PushColorsRedYellow.GreenLit.value,
-                                       PushColorsRedYellow.LimeLit.value,
-                                       PushColorsRedYellow.YellowLit.value,
-                                       PushColorsRedYellow.RedLit.value]
-                        color = int(val.value_float * (len(nice_colors)-1))
-                        val.button.set_light(f"{nice_colors[color]}")
-                    # print(f"{val.name} updated to {val.value_float}")
-                if type(val) is ValueHolder:
-                    val.osc_send()
-                # Set previous value to detect change
-                val.value_previous = val.value
+                self.draw_button(val=val)
+
         # Check if selected group is changed
         if self.selected_group != self.selected_group_previous:
             # Set sliders
@@ -563,6 +547,17 @@ class LightDesk(threading.Thread):
                 self.controls_push.display.clear_text()
             # Set previous value to detect change
             self.selected_group_previous = self.selected_group
+
+        # If pushed rows changed, redraw buttons on that row
+        if self.get_pushed_rows() != self.pushed_row_previous:
+            # Redraw all values in row
+            print(f"Redraw pushed rows {self.get_pushed_rows()}")
+            for group_key, group in self.groups.items():
+                for col_key, col in group.columns.items():
+                    for btn_key, btn in col.buttons.items():
+                        self.draw_button(btn)
+            self.pushed_row_previous = self.get_pushed_rows()
+
         # Update display
         if self.selected_group:
             group = self.groups[self.selected_group]
@@ -575,6 +570,44 @@ class LightDesk(threading.Thread):
                 for i in range(0, max_buttons):
                     val = col.buttons[keys[i]]
                     self.controls_push.display.set_text(f"{val.get_text()}", row=i+2, col=col.column_i)
+
+    def draw_button(self, val):
+        # If row is selected, show all colors in at least a minimum to highlight
+        lightness_max = 0.6
+        if val.group_row in self.get_pushed_rows():
+            # lightness = map(0.1, 0.8, 0.0, 1.0)
+            lightness = translate(value=val.value_float,
+                                  left_min=0.0, left_max=1.0,
+                                  right_min=0.05, right_max=lightness_max)
+        else:
+            lightness = translate(value=val.value_float,
+                                  left_min=0.0, left_max=1.0,
+                                  right_min=0.0, right_max=lightness_max)
+        # Check if RGB-mode is available
+        if type(val) is ButtonValue:
+            # Update color and stuff
+            val.osc_send()
+            if val.button.luminance_type is PushLightTypes.RGB or val.button.luminance_type is FaderportLightTypes.RGB:
+                # Cut lightness in half to not make white
+                r, g, b = colorsys.hls_to_rgb(h=val.light_hue, s=val.light_saturation, l=lightness)
+                val.button.set_light(f"{int(r * 255)},{int(g * 255)},{int(b * 255)}")
+            elif val.button.luminance_type is PushLightTypes.RedYellow:
+                nice_colors = [PushColorsRedYellow.Black.value,
+                               PushColorsRedYellow.RedDim.value,
+                               PushColorsRedYellow.YellowDim.value,
+                               PushColorsRedYellow.LimeDim.value,
+                               PushColorsRedYellow.GreenDim.value,
+                               PushColorsRedYellow.GreenLit.value,
+                               PushColorsRedYellow.LimeLit.value,
+                               PushColorsRedYellow.YellowLit.value,
+                               PushColorsRedYellow.RedLit.value]
+                color = int(val.value_float * (len(nice_colors) - 1))
+                val.button.set_light(f"{nice_colors[color]}")
+            # print(f"{val.name} updated to {val.value_float}")
+        if type(val) is ValueHolder:
+            val.osc_send()
+        # Set previous value to detect change
+        val.value_previous = val.value
 
     def _mqtt_on_connected(self, client, userdata, flags, rc):
         print(f"MQTT Connected with result code {rc}")
