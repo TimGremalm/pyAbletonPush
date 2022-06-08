@@ -551,7 +551,7 @@ class LightDesk(threading.Thread):
         # If pushed rows changed, redraw buttons on that row
         if self.get_pushed_rows() != self.pushed_row_previous:
             # Redraw all values in row
-            print(f"Redraw pushed rows {self.get_pushed_rows()}")
+            # print(f"Redraw pushed rows {self.get_pushed_rows()}")
             for group_key, group in self.groups.items():
                 for col_key, col in group.columns.items():
                     for btn_key, btn in col.buttons.items():
@@ -573,25 +573,32 @@ class LightDesk(threading.Thread):
 
     def draw_button(self, val):
         # If row is selected, show all colors in at least a minimum to highlight
-        lightness_max = 0.6
-        if val.group_row in self.get_pushed_rows():
-            # lightness = map(0.1, 0.8, 0.0, 1.0)
-            lightness = translate(value=val.value_float,
-                                  left_min=0.0, left_max=1.0,
-                                  right_min=0.05, right_max=lightness_max)
-        else:
-            lightness = translate(value=val.value_float,
-                                  left_min=0.0, left_max=1.0,
-                                  right_min=0.0, right_max=lightness_max)
         # Check if RGB-mode is available
         if type(val) is ButtonValue:
             # Update color and stuff
             val.osc_send()
             if val.button.luminance_type is PushLightTypes.RGB or val.button.luminance_type is FaderportLightTypes.RGB:
+                lightness_min = 0.06
+                lightness_max = 0.60
+                lightness = translate(value=val.value_float,
+                                      left_min=0.0, left_max=1.0,
+                                      right_min=lightness_min, right_max=lightness_max)
+                if val.group_row not in self.get_pushed_rows():
+                    # Make black if row is not pushed down
+                    if val.value == 0:
+                        lightness = 0
                 # Cut lightness in half to not make white
                 r, g, b = colorsys.hls_to_rgb(h=val.light_hue, s=val.light_saturation, l=lightness)
                 val.button.set_light(f"{int(r * 255)},{int(g * 255)},{int(b * 255)}")
             elif val.button.luminance_type is PushLightTypes.RedYellow:
+                lightness_min = 0.15
+                lightness_max = 1.00
+                lightness = translate(value=val.value_float,
+                                      left_min=0.0, left_max=1.0,
+                                      right_min=lightness_min, right_max=lightness_max)
+                if val.group_row not in self.get_pushed_rows():
+                    if val.value == 0:
+                        lightness = 0
                 nice_colors = [PushColorsRedYellow.Black.value,
                                PushColorsRedYellow.RedDim.value,
                                PushColorsRedYellow.YellowDim.value,
@@ -601,7 +608,7 @@ class LightDesk(threading.Thread):
                                PushColorsRedYellow.LimeLit.value,
                                PushColorsRedYellow.YellowLit.value,
                                PushColorsRedYellow.RedLit.value]
-                color = int(val.value_float * (len(nice_colors) - 1))
+                color = int(lightness * (len(nice_colors) - 1))
                 val.button.set_light(f"{nice_colors[color]}")
             # print(f"{val.name} updated to {val.value_float}")
         if type(val) is ValueHolder:
